@@ -1,0 +1,43 @@
+{
+  "name": "team-tango-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TeamTango - Youth sports team matchmaking app",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "mobile:build": "npm run build && npx cap sync",
+    "mobile:ios": "npm run mobile:build && npx cap open ios",
+    "mobile:android": "npm run mobile:build && npx cap open android",
+    "mobile:run:ios": "npm run mobile:build && npx cap run ios",
+    "mobile:run:android": "npm run mobile:build && npx cap run android",
+    "cap:sync": "npx cap sync",
+    "cap:serve": "npx cap run web"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.2",
+    "@capacitor/cli": "^7.4.2",
+    "@capacitor/core": "^7.4.2",
+    "@capacitor/ios": "^7.4.2",
+    "@headlessui/vue": "^1.7.23",
+    "@heroicons/vue": "^2.2.0",
+    "@supabase/supabase-js": "^2.51.0",
+    "@vue/typescript-plugin": "^3.0.1",
+    "@vueuse/core": "^13.5.0",
+    "pinia": "^3.0.3",
+    "typescript": "^5.8.3",
+    "vue": "^3.5.17",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "vite": "^7.0.0",
+    "vite-plugin-vue-devtools": "^7.7.7"
+  }
+}

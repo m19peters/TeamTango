@@ -1,0 +1,185 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  body {
+    @apply bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-300;
+  }
+  
+  #app {
+    @apply min-h-screen;
+  }
+}
+
+@layer components {
+  /* Button Components */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 focus:ring-primary-500 dark:bg-primary-500 dark:hover:bg-primary-600 dark:active:bg-primary-700 shadow-lg hover:shadow-xl;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 dark:active:bg-gray-500 border border-gray-200 dark:border-gray-600;
+  }
+  
+  .btn-ghost {
+    @apply text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:ring-gray-500 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800;
+  }
+  
+  /* Card Components */
+  .card {
+    @apply bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 transition-all duration-200;
+  }
+  
+  .card-hover {
+    @apply hover:shadow-md hover:shadow-primary-500/10 dark:hover:shadow-primary-400/10 hover:-translate-y-1;
+  }
+  
+  /* Input Components */
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+  }
+  
+  /* Navigation Components */
+  .nav-link {
+    @apply flex flex-col items-center py-2 px-3 text-xs transition-all duration-200 rounded-lg;
+  }
+  
+  .nav-link-active {
+    @apply text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30;
+  }
+  
+  .nav-link-inactive {
+    @apply text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800;
+  }
+  
+  /* Background Patterns */
+  .bg-pattern {
+    background-image: 
+      radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.15) 1px, transparent 0);
+    background-size: 20px 20px;
+  }
+  
+  .dark .bg-pattern {
+    background-image: 
+      radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.1) 1px, transparent 0);
+  }
+  
+  /* Glass Effect */
+  .glass {
+    @apply bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-white/20 dark:border-slate-700/50;
+  }
+  
+  /* Animations */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .bounce-in {
+    animation: bounceIn 0.5s ease-out;
+  }
+  
+  /* Team Card Specific */
+  .team-card {
+    @apply bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden transition-all duration-300;
+  }
+  
+  .team-card-swipe {
+    @apply cursor-grab active:cursor-grabbing;
+  }
+  
+  /* Match indicators */
+  .swipe-indicator {
+    @apply absolute top-4 px-4 py-2 rounded-full font-bold text-sm transition-all duration-200 transform shadow-lg;
+  }
+  
+  .swipe-pass {
+    @apply left-4 bg-red-500 text-white -rotate-12;
+  }
+  
+  .swipe-match {
+    @apply right-4 bg-green-500 text-white rotate-12;
+  }
+  
+  /* Status badges */
+  .status-badge {
+    @apply inline-flex items-center px-2 py-1 rounded text-xs font-medium;
+  }
+  
+  .status-available {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+  }
+  
+  .status-travel {
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200;
+  }
+  
+  .status-beginner {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+  }
+  
+  .status-intermediate {
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200;
+  }
+  
+  .status-advanced {
+    @apply bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200;
+  }
+  
+  .status-elite {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent;
+  }
+  
+  .dark .text-gradient {
+    @apply from-primary-400 to-primary-600;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% { 
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
