@@ -43,17 +43,36 @@
           <div class="flex items-start justify-between">
             <div class="flex-1">
               <div class="flex items-center mb-3">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mr-3">{{ team.name }}</h3>
-                <span 
-                  :class="[
-                    'px-2 py-1 text-xs rounded-full',
-                    team.status === 'Active' 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                  ]"
-                >
-                  {{ team.status }}
-                </span>
+                <!-- Team Logo -->
+                <div class="w-10 h-10 mr-3 shrink-0">
+                  <img 
+                    v-if="team.logo_url" 
+                    :src="team.logo_url" 
+                    :alt="`${team.name} logo`"
+                    class="w-full h-full rounded-full object-cover border border-gray-200 dark:border-gray-600"
+                    @error="$event.target.style.display = 'none'"
+                  />
+                  <div 
+                    v-else
+                    class="w-full h-full bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                  >
+                    {{ team.name.charAt(0).toUpperCase() }}
+                  </div>
+                </div>
+                
+                <div class="flex-1">
+                  <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mr-3">{{ team.name }}</h3>
+                  <span 
+                    :class="[
+                      'px-2 py-1 text-xs rounded-full',
+                      team.status === 'Active' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                    ]"
+                  >
+                    {{ team.status }}
+                  </span>
+                </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
@@ -131,6 +150,73 @@
           </div>
 
           <form @submit.prevent="saveTeam" class="space-y-6">
+            <!-- Team Logo Section -->
+            <div class="bg-gray-50 dark:bg-slate-700 rounded-lg p-4">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Team Logo</label>
+              
+              <!-- Current Logo Display -->
+              <div class="flex items-center space-x-4 mb-4">
+                <div class="w-16 h-16 relative">
+                  <img 
+                    v-if="currentLogoUrl && !logoToRemove" 
+                    :src="currentLogoUrl" 
+                    :alt="`${teamForm.name || 'Team'} logo`"
+                    class="w-full h-full rounded-full object-cover border-2 border-primary-200 dark:border-primary-700 shadow-lg"
+                    @error="onLogoError"
+                  />
+                  <div 
+                    v-else-if="logoPreview && !logoToRemove"
+                    class="w-full h-full rounded-full overflow-hidden border-2 border-primary-200 dark:border-primary-700 shadow-lg"
+                  >
+                    <img 
+                      :src="logoPreview" 
+                      :alt="'New logo preview'"
+                      class="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div 
+                    v-else
+                    class="w-full h-full bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg"
+                  >
+                    {{ (teamForm.name || 'T').charAt(0).toUpperCase() }}
+                  </div>
+                </div>
+                
+                <div class="flex-1">
+                  <div class="flex space-x-2">
+                    <label class="btn btn-secondary cursor-pointer text-sm">
+                      <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      {{ currentLogoUrl ? 'Change Logo' : 'Upload Logo' }}
+                      <input 
+                        ref="logoInput"
+                        type="file" 
+                        class="hidden" 
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        @change="onLogoSelected"
+                      />
+                    </label>
+                    
+                    <button 
+                      v-if="currentLogoUrl || logoPreview"
+                      type="button"
+                      @click="removeLogo"
+                      class="btn text-sm bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800"
+                    >
+                      <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Remove
+                    </button>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    JPEG, PNG, GIF, or WebP. Max 5MB.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Team Name</label>
@@ -319,6 +405,13 @@ const showCreateModal = ref(false)
 const editingTeam = ref(null)
 const teamToDelete = ref(null)
 
+// Logo handling
+const logoInput = ref(null)
+const selectedLogo = ref(null)
+const logoPreview = ref(null)
+const currentLogoUrl = ref(null)
+const logoToRemove = ref(false)
+
 // Use storeToRefs to maintain reactivity
 const { loading, teams, sports } = storeToRefs(teamStore)
 
@@ -347,13 +440,77 @@ const teamForm = reactive({
   zip: '',
   homeVenue: '',
   venueAddress: '',
-  description: ''
+  description: '',
+  logo: null
 })
 
 const resetForm = () => {
   Object.keys(teamForm).forEach(key => {
-    teamForm[key] = ''
+    teamForm[key] = key === 'logo' ? null : ''
   })
+  
+  // Reset logo state
+  selectedLogo.value = null
+  logoPreview.value = null
+  currentLogoUrl.value = null
+  logoToRemove.value = false
+  
+  // Clear file input
+  if (logoInput.value) {
+    logoInput.value.value = ''
+  }
+}
+
+// Logo handling functions
+const onLogoSelected = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // Validate file type
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    notificationStore.error('Invalid File Type', 'Please upload a JPEG, PNG, GIF, or WebP image.')
+    event.target.value = ''
+    return
+  }
+
+  // Validate file size (5MB)
+  const maxSize = 5 * 1024 * 1024
+  if (file.size > maxSize) {
+    notificationStore.error('File Too Large', 'Logo must be less than 5MB.')
+    event.target.value = ''
+    return
+  }
+
+  selectedLogo.value = file
+  teamForm.logo = file
+  logoToRemove.value = false
+
+  // Create preview
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    logoPreview.value = e.target.result
+  }
+  reader.readAsDataURL(file)
+}
+
+const removeLogo = () => {
+  selectedLogo.value = null
+  logoPreview.value = null
+  logoToRemove.value = true
+  teamForm.logo = null
+  teamForm.deleteLogo = true
+  
+  // Clear file input
+  if (logoInput.value) {
+    logoInput.value.value = ''
+  }
+}
+
+const onLogoError = (event) => {
+  // Hide broken image and show fallback
+  event.target.style.display = 'none'
+  currentLogoUrl.value = null
 }
 
 const closeModal = () => {
@@ -381,8 +538,20 @@ const editTeam = (team) => {
     zip: team.zip || '',
     homeVenue: team.home_venue || '',
     venueAddress: team.venue_address || '',
-    description: team.description || ''
+    description: team.description || '',
+    logo: null // Reset logo form field
   })
+  
+  // Set current logo URL for display
+  currentLogoUrl.value = team.logo_url || null
+  logoPreview.value = null
+  selectedLogo.value = null
+  logoToRemove.value = false
+  
+  // Clear file input
+  if (logoInput.value) {
+    logoInput.value.value = ''
+  }
   
   // Debug: Log the form data after assignment
   console.log('Form after assignment:', { ...teamForm })

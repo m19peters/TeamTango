@@ -3,11 +3,21 @@ import { onMounted } from 'vue'
 import { useAuthStore } from './stores/auth.js'
 import { useThemeStore } from './stores/theme.js'
 import { useNotificationStore } from './stores/notifications.js'
+import { useRouter } from 'vue-router'
 import Toast from './components/Toast.vue'
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const notificationStore = useNotificationStore()
+const router = useRouter()
+
+const handleSignOut = async () => {
+  const result = await authStore.signOut()
+  if (!result.error) {
+    notificationStore.info('Signed Out', 'You have been successfully signed out.')
+    router.push('/')
+  }
+}
 
 onMounted(() => {
   authStore.initialize()
@@ -163,7 +173,7 @@ onMounted(() => {
                 </button>
 
                 <button 
-                  @click="authStore.signOut"
+                  @click="handleSignOut"
                   class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
                   Sign Out

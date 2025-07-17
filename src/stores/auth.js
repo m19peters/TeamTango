@@ -9,7 +9,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(true)
 
   // Getters
-  const isAuthenticated = computed(() => !!user.value)
+  const isAuthenticated = computed(() => !!user.value && !!session.value)
   const userEmail = computed(() => user.value?.email)
 
   // Actions
@@ -40,19 +40,23 @@ export const useAuthStore = defineStore('auth', () => {
 
   const initialize = () => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        user.value = session.user
-        session.value = session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (currentSession) {
+        user.value = currentSession.user
+        session.value = currentSession
+      } else {
+        // Ensure state is properly cleared if no session
+        user.value = null
+        session.value = null
       }
       loading.value = false
     })
 
     // Listen for auth changes
-    onAuthStateChange((event, session) => {
-      if (session) {
-        user.value = session.user
-        session.value = session
+    onAuthStateChange((event, currentSession) => {
+      if (currentSession) {
+        user.value = currentSession.user
+        session.value = currentSession
       } else {
         user.value = null
         session.value = null

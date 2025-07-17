@@ -36,8 +36,8 @@ TeamTango is a mobile-friendly Vue.js application that helps youth sports teams 
 1. **Clone and install dependencies**
    ```bash
    cd team-matchup-app
-   npm install
-   ```
+npm install
+```
 
 2. **Configure Supabase**
    - Create a new project at [Supabase](https://supabase.com)
@@ -50,8 +50,8 @@ TeamTango is a mobile-friendly Vue.js application that helps youth sports teams 
 
 3. **Run development server**
    ```bash
-   npm run dev
-   ```
+npm run dev
+```
    Open http://localhost:5173 in your browser
 
 ## Database Setup

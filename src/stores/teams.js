@@ -44,6 +44,82 @@ export const useTeamStore = defineStore('teams', () => {
     return sports.value.find(sport => sport.name === sportName)
   }
 
+  // Logo Management
+  const uploadTeamLogo = async (file, teamId) => {
+    try {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('Please upload a valid image file (JPEG, PNG, GIF, or WebP)')
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      if (file.size > maxSize) {
+        throw new Error('File size must be less than 5MB')
+      }
+
+      // Create unique filename
+      const fileExt = file.name.split('.').pop().toLowerCase()
+      const fileName = `${authStore.user.id}/${teamId}.${fileExt}`
+
+      // Upload to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('team-logos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true // Replace existing file
+        })
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('team-logos')
+        .getPublicUrl(fileName)
+
+      return { data: urlData.publicUrl, error: null }
+    } catch (error) {
+      console.error('Error uploading logo:', error)
+      notificationStore.error('Upload Failed', error.message)
+      return { data: null, error }
+    }
+  }
+
+  const deleteTeamLogo = async (teamId) => {
+    try {
+      // List all files for this team to find the logo
+      const { data: files, error: listError } = await supabase.storage
+        .from('team-logos')
+        .list(`${authStore.user.id}`, {
+          search: teamId
+        })
+
+      if (listError) throw listError
+
+      // Delete all logo files for this team
+      if (files && files.length > 0) {
+        const filesToDelete = files
+          .filter(file => file.name.startsWith(teamId))
+          .map(file => `${authStore.user.id}/${file.name}`)
+
+        if (filesToDelete.length > 0) {
+          const { error: deleteError } = await supabase.storage
+            .from('team-logos')
+            .remove(filesToDelete)
+
+          if (deleteError) throw deleteError
+        }
+      }
+
+      return { error: null }
+    } catch (error) {
+      console.error('Error deleting logo:', error)
+      notificationStore.error('Delete Failed', error.message)
+      return { error }
+    }
+  }
+
   // Team CRUD Operations
   const createTeam = async (teamData) => {
     try {
@@ -82,6 +158,30 @@ export const useTeamStore = defineStore('teams', () => {
 
       if (error) throw error
 
+      // Handle logo upload if provided
+      let logoUrl = null
+      if (teamData.logo && teamData.logo instanceof File) {
+        const logoResult = await uploadTeamLogo(teamData.logo, data.id)
+        if (logoResult.error) {
+          // Log error but don't fail team creation
+          console.warn('Logo upload failed:', logoResult.error)
+        } else {
+          logoUrl = logoResult.data
+          
+          // Update team with logo URL
+          const { error: updateError } = await supabase
+            .from('teams')
+            .update({ logo_url: logoUrl })
+            .eq('id', data.id)
+
+          if (updateError) {
+            console.warn('Failed to update team with logo URL:', updateError)
+          } else {
+            data.logo_url = logoUrl
+          }
+        }
+      }
+
       // Add to local teams array
       teams.value.push(data)
       
@@ -111,6 +211,21 @@ export const useTeamStore = defineStore('teams', () => {
         delete updateData.sport // Remove sport name, use sport_id
       }
 
+      // Handle logo upload if provided
+      let logoUrl = updateData.logo_url // Keep existing logo URL
+      if (teamData.logo && teamData.logo instanceof File) {
+        const logoResult = await uploadTeamLogo(teamData.logo, teamId)
+        if (logoResult.error) {
+          throw new Error(`Logo upload failed: ${logoResult.error.message}`)
+        } else {
+          logoUrl = logoResult.data
+        }
+      } else if (teamData.deleteLogo) {
+        // Delete existing logo if requested
+        await deleteTeamLogo(teamId)
+        logoUrl = null
+      }
+
       // Map form fields to database fields
       const dbUpdateData = {
         name: updateData.name,
@@ -124,6 +239,7 @@ export const useTeamStore = defineStore('teams', () => {
         home_venue: updateData.homeVenue,
         venue_address: updateData.venueAddress,
         description: updateData.description,
+        logo_url: logoUrl,
         updated_at: new Date().toISOString()
       }
 
@@ -207,6 +323,7 @@ export const useTeamStore = defineStore('teams', () => {
           home_venue,
           venue_address,
           description,
+          logo_url,
           status,
           user_id,
           created_at,
@@ -242,7 +359,8 @@ export const useTeamStore = defineStore('teams', () => {
         .from('teams')
         .select(`
           *,
-          sport:sports(*)
+          sport:sports(*),
+          availability:team_availability(*)
         `)
         .eq('id', teamId)
         .single()
@@ -398,6 +516,103 @@ export const useTeamStore = defineStore('teams', () => {
     }
   }
 
+  // Get combined availability for multiple teams (for match request dropdowns)
+  const getCombinedAvailability = async (teamIds, startDate = null, endDate = null) => {
+    try {
+      let query = supabase
+        .from('team_availability')
+        .select(`
+          *,
+          team:teams(id, name)
+        `)
+        .in('team_id', teamIds)
+        .in('type', ['available', 'travel']) // Only show available dates, not unavailable
+        .order('date', { ascending: true })
+
+      if (startDate) {
+        query = query.gte('date', startDate)
+      } else {
+        // Default to today onwards
+        query = query.gte('date', new Date().toISOString().split('T')[0])
+      }
+      
+      if (endDate) {
+        query = query.lte('date', endDate)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      // Group by date and format for dropdown
+      const groupedByDate = {}
+      data.forEach(availability => {
+        const date = availability.date
+        if (!groupedByDate[date]) {
+          groupedByDate[date] = {
+            date,
+            teams: [],
+            formatted: formatDateForDropdown(date)
+          }
+        }
+        groupedByDate[date].teams.push({
+          ...availability,
+          team_name: availability.team.name
+        })
+      })
+
+      // Convert to array and sort
+      const availableDates = Object.values(groupedByDate)
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+
+      return { data: availableDates, error: null }
+    } catch (error) {
+      console.error('Error fetching combined availability:', error)
+      return { data: null, error }
+    }
+  }
+
+  // Get future available dates for a team in a simple format
+  const getFutureAvailableDates = async (teamId, limit = 10) => {
+    try {
+      const { data, error } = await supabase
+        .from('team_availability')
+        .select('date, time, type, notes')
+        .eq('team_id', teamId)
+        .in('type', ['available', 'travel'])
+        .gte('date', new Date().toISOString().split('T')[0])
+        .order('date', { ascending: true })
+        .limit(limit)
+
+      if (error) throw error
+      return { data, error: null }
+    } catch (error) {
+      console.error('Error fetching future available dates:', error)
+      return { data: null, error }
+    }
+  }
+
+  // Helper function to format dates for dropdown
+  const formatDateForDropdown = (dateString) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    
+    if (date.toDateString() === now.toDateString()) {
+      return 'Today'
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return 'Tomorrow'
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      })
+    }
+  }
+
   const getMatchRequests = async (type = 'all') => {
     try {
       let query = supabase
@@ -469,17 +684,22 @@ export const useTeamStore = defineStore('teams', () => {
   }
 
   // Discovery/Search Functions
-  const searchTeams = async (filters = {}) => {
+  const searchTeams = async (filters = {}, userTeamSports = []) => {
     try {
       let query = supabase
         .from('teams')
         .select(`
           *,
-          sport:sports(*),
-          availability:team_availability(*)
+          sport:sports(*)
         `)
         .neq('user_id', authStore.user?.id) // Don't show own teams
         .eq('status', 'Active')
+
+      // IMPORTANT: Only show teams from sports that the user's teams play
+      // This ensures volleyball teams never see hockey teams, etc.
+      if (userTeamSports.length > 0) {
+        query = query.in('sport_id', userTeamSports)
+      }
 
       if (filters.sport) {
         const sport = getSportByName(filters.sport)
@@ -514,6 +734,142 @@ export const useTeamStore = defineStore('teams', () => {
     }
   }
 
+  // Calculate why two teams might be a good match
+  const calculateMatchReasons = (yourTeam, theirTeam) => {
+    const reasons = []
+    
+    // Helper function to get sport icon
+    const getSportIcon = (sportName) => {
+      const sportIcons = {
+        'Soccer': '⚽',
+        'Football': '🏈', 
+        'Basketball': '🏀',
+        'Baseball': '⚾',
+        'Tennis': '🎾',
+        'Volleyball': '🏐',
+        'Hockey': '🏒',
+        'Golf': '⛳',
+        'Swimming': '🏊',
+        'Track': '🏃',
+        'Wrestling': '🤼',
+        'Lacrosse': '🥍',
+        'Softball': '🥎'
+      }
+      return sportIcons[sportName] || '⚽'
+    }
+    
+    // Same sport (should always be true now)
+    if (yourTeam.sport_id === theirTeam.sport_id) {
+      const sportName = theirTeam.sport?.name || 'the same sport'
+      reasons.push({
+        type: 'sport',
+        icon: getSportIcon(sportName),
+        title: 'Same Sport',
+        description: `Both teams play ${sportName}`
+      })
+    }
+
+    // Age group compatibility
+    if (yourTeam.age_group === theirTeam.age_group) {
+      reasons.push({
+        type: 'age',
+        icon: '👥',
+        title: 'Same Age Group',
+        description: `Both teams are ${yourTeam.age_group}`
+      })
+    } else if (yourTeam.age_group && theirTeam.age_group) {
+      // Check for compatible age groups (within 1-2 years)
+      const yourAge = parseInt(yourTeam.age_group.replace(/[^\d]/g, ''))
+      const theirAge = parseInt(theirTeam.age_group.replace(/[^\d]/g, ''))
+      
+      if (Math.abs(yourAge - theirAge) <= 2) {
+        reasons.push({
+          type: 'age',
+          icon: '👦',
+          title: 'Compatible Ages',
+          description: `Close age groups: ${yourTeam.age_group} vs ${theirTeam.age_group}`
+        })
+      }
+    }
+
+    // Skill level compatibility
+    const skillLevels = ['Beginner', 'Intermediate', 'Advanced', 'Elite']
+    const yourSkillIndex = skillLevels.indexOf(yourTeam.skill_level)
+    const theirSkillIndex = skillLevels.indexOf(theirTeam.skill_level)
+    const skillDiff = Math.abs(yourSkillIndex - theirSkillIndex)
+
+    if (yourTeam.skill_level === theirTeam.skill_level) {
+      reasons.push({
+        type: 'skill',
+        icon: '🎯',
+        title: 'Perfect Skill Match',
+        description: `Both teams are ${yourTeam.skill_level} level`
+      })
+    } else if (skillDiff === 1) {
+      reasons.push({
+        type: 'skill',
+        icon: '⚖️',
+        title: 'Compatible Skill Level',
+        description: `Close skill levels: ${yourTeam.skill_level} vs ${theirTeam.skill_level}`
+      })
+    }
+
+    // Geographic proximity
+    if (yourTeam.state === theirTeam.state) {
+      if (yourTeam.city === theirTeam.city) {
+        reasons.push({
+          type: 'location',
+          icon: '📍',
+          title: 'Same City',
+          description: `Both teams are in ${yourTeam.city}, ${yourTeam.state}`
+        })
+      } else {
+        reasons.push({
+          type: 'location',
+          icon: '🗺️',
+          title: 'Same State',
+          description: `Both teams are in ${yourTeam.state}`
+        })
+      }
+    }
+
+    // Hosting capabilities
+    if (yourTeam.home_venue && theirTeam.home_venue) {
+      reasons.push({
+        type: 'hosting',
+        icon: '🏟️',
+        title: 'Both Can Host',
+        description: 'Flexible venue options for games'
+      })
+    } else if (yourTeam.home_venue && !theirTeam.home_venue) {
+      reasons.push({
+        type: 'hosting',
+        icon: '🏠',
+        title: 'You Can Host',
+        description: `Play at ${yourTeam.home_venue}`
+      })
+    } else if (!yourTeam.home_venue && theirTeam.home_venue) {
+      reasons.push({
+        type: 'hosting',
+        icon: '✈️',
+        title: 'They Can Host',
+        description: `Play at ${theirTeam.home_venue}`
+      })
+    }
+
+    // If we have very few reasons, add a general compatibility note
+    if (reasons.length === 1) {
+      reasons.push({
+        type: 'general',
+        icon: '🤝',
+        title: 'Looking for Matches',
+        description: 'Both teams are actively seeking games'
+      })
+    }
+
+    return reasons
+  }
+
   // Utility Functions
   const refreshTeams = () => {
     return loadUserTeams()
@@ -542,6 +898,10 @@ export const useTeamStore = defineStore('teams', () => {
     getSportById,
     getSportByName,
     
+    // Logo
+    uploadTeamLogo,
+    deleteTeamLogo,
+    
     // Team CRUD
     createTeam,
     updateTeam,
@@ -554,6 +914,8 @@ export const useTeamStore = defineStore('teams', () => {
     updateTeamAvailability,
     deleteTeamAvailability,
     getTeamAvailability,
+    getCombinedAvailability,
+    getFutureAvailableDates,
     
     // Match Requests
     sendMatchRequest,
@@ -562,6 +924,7 @@ export const useTeamStore = defineStore('teams', () => {
     
     // Discovery
     searchTeams,
+    calculateMatchReasons,
     
     // Utilities
     refreshTeams,

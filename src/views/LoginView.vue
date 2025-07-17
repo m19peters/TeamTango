@@ -138,12 +138,14 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+import { useNotificationStore } from '../stores/notifications.js'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
 
 const isSignUp = ref(false)
 const loading = ref(false)
@@ -199,7 +201,18 @@ const handleSubmit = async () => {
       }
     } else {
       result = await authStore.signIn(form.email, form.password)
-      if (!result.error && authStore.isAuthenticated) {
+      if (!result.error && result.data?.session) {
+        // Show welcome notification
+        notificationStore.success(
+          'Welcome back! 🎉', 
+          `Signed in as ${result.data.user.email}`
+        )
+        
+        // Clear form
+        form.email = ''
+        form.password = ''
+        
+        // Redirect to dashboard
         router.push('/dashboard')
       }
     }
