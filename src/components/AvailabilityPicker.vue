@@ -13,11 +13,10 @@
       <span>{{ loading ? 'Loading...' : (selectedDates.length > 0 ? `See Availability (${selectedDates.length} selected)` : 'See Availability') }}</span>
     </button>
 
-    <!-- Full Screen Overlay using Teleport -->
-    <Teleport to="body" :disabled="!document?.body">
-      <div v-if="showPicker" class="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-[10001] p-4" @click="closePicker">
-        <!-- Availability Picker Modal -->
-        <div @click.stop class="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-600 w-full max-w-md max-h-[80vh] flex flex-col">
+    <!-- Full Screen Overlay -->
+    <div v-if="showPicker" class="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-[10001] p-4" @click="closePicker" @keydown.esc="closePicker" tabindex="-1">
+      <!-- Availability Picker Modal -->
+      <div @click.stop class="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-600 w-full max-w-md max-h-[80vh] flex flex-col">
       <!-- Header -->
       <div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-slate-600">
         <div class="flex items-center space-x-2">
@@ -112,7 +111,6 @@
       </div>
       </div>
     </div>
-    </Teleport>
 
     <!-- Selected Dates Preview -->
     <div v-if="selectedDates.length > 0" class="mt-3">
@@ -144,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useTeamStore } from '../stores/teams.js'
 import { useNotificationStore } from '../stores/notifications.js'
 
@@ -176,37 +174,36 @@ const selectedDates = ref([...props.modelValue])
 
 // Watch for external changes to modelValue
 watch(() => props.modelValue, (newValue) => {
-  selectedDates.value = [...newValue]
+  // Only update if the values are actually different to prevent loops
+  if (JSON.stringify(newValue) !== JSON.stringify(selectedDates.value)) {
+    selectedDates.value = [...newValue]
+  }
 }, { deep: true })
 
-// Watch for changes to selectedDates and emit
-watch(selectedDates, (newValue) => {
-  emit('update:modelValue', [...newValue])
+// Watch for changes to selectedDates and emit (with loop prevention)
+watch(selectedDates, (newValue, oldValue) => {
+  // Only emit if the values are actually different to prevent loops
+  if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
+    emit('update:modelValue', [...newValue])
+  }
 }, { deep: true })
 
 // Methods
 const closePicker = () => {
-  try {
-    showPicker.value = false
-    loading.value = false
-  } catch (error) {
-    console.error('Error closing picker:', error)
-    // Force close even if there's an error
-    showPicker.value = false
-    loading.value = false
-  }
+  showPicker.value = false
+  loading.value = false
 }
 
 const loadAndShowAvailability = async () => {
+  if (props.teamIds.length !== 2) {
+    notificationStore.error('Invalid Teams', 'Need exactly two teams to load availability')
+    return
+  }
+
+  loading.value = true
+  showPicker.value = true
+
   try {
-    if (props.teamIds.length !== 2) {
-      notificationStore.error('Invalid Teams', 'Need exactly two teams to load availability')
-      return
-    }
-
-    loading.value = true
-    showPicker.value = true
-
     // Get combined availability for both teams for the next 60 days
     const endDate = new Date()
     endDate.setDate(endDate.getDate() + 60)
@@ -257,74 +254,39 @@ const getTeamBadgeClass = (team) => {
 const formatTime = (timeString) => {
   if (!timeString) return ''
   
-  try {
-    const [hours, minutes] = timeString.split(':')
-    const date = new Date()
-    date.setHours(parseInt(hours), parseInt(minutes))
-    
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    })
-  } catch (error) {
-    return timeString
-  }
+  const [hours, minutes] = timeString.split(':')
+  const date = new Date()
+  date.setHours(parseInt(hours), parseInt(minutes))
+  
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
 }
 
 const formatDateForPreview = (dateString) => {
-  try {
-    const date = new Date(dateString)
-    const now = new Date()
-    const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    
-    if (date.toDateString() === now.toDateString()) {
-      return 'Today'
-    } else if (date.toDateString() === tomorrow.toDateString()) {
-      return 'Tomorrow'
-    } else {
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric',
-        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-      })
-    }
-  } catch (error) {
-    console.error('Error formatting date:', error)
-    return dateString
+  const date = new Date(dateString)
+  const now = new Date()
+  const tomorrow = new Date(now)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  
+  if (date.toDateString() === now.toDateString()) {
+    return 'Today'
+  } else if (date.toDateString() === tomorrow.toDateString()) {
+    return 'Tomorrow'
+  } else {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      month: 'short', 
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    })
   }
 }
 
-// Keyboard event handler
-const handleKeydown = (event) => {
-  if (event.key === 'Escape' && showPicker.value) {
-    closePicker()
-  }
-}
-
-// Mount/unmount lifecycle
-onMounted(() => {
-  try {
-    document.addEventListener('keydown', handleKeydown)
-  } catch (error) {
-    console.error('Error adding event listener:', error)
-  }
-})
-
-// Cleanup on unmount
-onUnmounted(() => {
-  try {
-    document.removeEventListener('keydown', handleKeydown)
-    showPicker.value = false
-    loading.value = false
-    availableDates.value = []
-    selectedDates.value = []
-  } catch (error) {
-    console.error('Error during cleanup:', error)
-  }
-})
+// Simple cleanup when component unmounts (no global listeners)
+// Cleanup will happen automatically when component is destroyed
 </script>
 
 <style scoped>
