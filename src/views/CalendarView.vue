@@ -247,24 +247,64 @@
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Start Date</label>
-                  <input
-                    v-model="eventForm.startDate"
-                    type="date"
-                    required
-                    :min="getTodayDate()"
-                    class="input-field"
-                    autocomplete="off"
-                  />
+                  <div class="relative">
+                    <input
+                      v-model="eventForm.startDate"
+                      type="date"
+                      required
+                      :min="getTodayDate()"
+                      class="input-field pr-10 cursor-pointer"
+                      autocomplete="off"
+                      @click="focusDateInput"
+                    />
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <!-- Quick date buttons -->
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    <button 
+                      type="button"
+                      @click="setDateToday"
+                      class="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      Today
+                    </button>
+                    <button 
+                      type="button"
+                      @click="setDateTomorrow"
+                      class="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      Tomorrow
+                    </button>
+                    <button 
+                      type="button"
+                      @click="setDateNextWeekend"
+                      class="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      Next Weekend
+                    </button>
+                  </div>
                 </div>
                 <div v-if="eventForm.type === 'travel' || eventForm.type === 'available'">
                   <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">End Date (Optional)</label>
-                  <input
-                    v-model="eventForm.endDate"
-                    type="date"
-                    class="input-field"
-                    :min="eventForm.startDate || getTodayDate()"
-                    autocomplete="off"
-                  />
+                  <div class="relative">
+                    <input
+                      v-model="eventForm.endDate"
+                      type="date"
+                      class="input-field pr-10 cursor-pointer"
+                      :min="eventForm.startDate || getTodayDate()"
+                      autocomplete="off"
+                      @click="focusDateInput"
+                    />
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  </div>
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Creates individual entries for each date
                   </p>
@@ -308,13 +348,59 @@
               <div v-if="!eventForm.allDay" class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Time</label>
-                  <input
-                    v-model="eventForm.time"
-                    type="time"
-                    :required="eventForm.type === 'available' && !eventForm.allDay"
-                    class="input-field"
-                    autocomplete="off"
-                  />
+                  <div class="relative">
+                    <input
+                      v-model="eventForm.time"
+                      type="time"
+                      :required="eventForm.type === 'available' && !eventForm.allDay"
+                      class="input-field pr-10 cursor-pointer"
+                      autocomplete="off"
+                      @click="focusTimeInput"
+                    />
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <!-- Quick time buttons -->
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    <button 
+                      type="button"
+                      @click="setTime('09:00')"
+                      class="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      9 AM
+                    </button>
+                    <button 
+                      type="button"
+                      @click="setTime('10:00')"
+                      class="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      10 AM
+                    </button>
+                    <button 
+                      type="button"
+                      @click="setTime('14:00')"
+                      class="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      2 PM
+                    </button>
+                    <button 
+                      type="button"
+                      @click="setTime('18:00')"
+                      class="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      6 PM
+                    </button>
+                    <button 
+                      type="button"
+                      @click="setTime('19:00')"
+                      class="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      7 PM
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -402,7 +488,6 @@ watch(() => viewingAsTeamStore.selectedTeamId, (newTeamId) => {
   // Only update if we have a valid team ID, don't clear it if it becomes null temporarily
   if (newTeamId) {
     eventForm.teamId = newTeamId
-    console.log('Team changed in form:', newTeamId)
   }
 }, { immediate: true })
 
@@ -570,6 +655,49 @@ const openAddAvailabilityModal = () => {
   showAddAvailabilityModal.value = true
 }
 
+// Helper functions for quick date/time selection
+const focusDateInput = (event) => {
+  try {
+    event.target.showPicker?.()
+  } catch (error) {
+    // Fallback for browsers that don't support showPicker
+    event.target.focus()
+  }
+}
+
+const focusTimeInput = (event) => {
+  try {
+    event.target.showPicker?.()
+  } catch (error) {
+    // Fallback for browsers that don't support showPicker
+    event.target.focus()
+  }
+}
+
+const setDateToday = () => {
+  eventForm.startDate = getTodayDate()
+}
+
+const setDateTomorrow = () => {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  eventForm.startDate = tomorrow.toISOString().split('T')[0]
+}
+
+const setDateNextWeekend = () => {
+  const today = new Date()
+  const nextSaturday = new Date(today)
+  nextSaturday.setDate(today.getDate() + (6 - today.getDay() + 7) % 7)
+  if (nextSaturday.getDay() === today.getDay() && nextSaturday.getDate() === today.getDate()) {
+    nextSaturday.setDate(nextSaturday.getDate() + 7)
+  }
+  eventForm.startDate = nextSaturday.toISOString().split('T')[0]
+}
+
+const setTime = (timeString) => {
+  eventForm.time = timeString
+}
+
 const resetFormForType = () => {
   // Reset common fields
   eventForm.startDate = ''
@@ -625,13 +753,6 @@ const saveEvent = async () => {
   loading.value = true
   
   try {
-    console.log('saveEvent - Form state:', {
-      teamId: eventForm.teamId,
-      selectedTeamId: viewingAsTeamStore.selectedTeamId,
-      startDate: eventForm.startDate,
-      type: eventForm.type
-    })
-    
     // Validate required fields based on type
     if (!eventForm.startDate) {
       throw new Error('Start date is required')
@@ -653,7 +774,6 @@ const saveEvent = async () => {
     // Ensure eventForm has the current selected team
     if (!eventForm.teamId) {
       eventForm.teamId = viewingAsTeamStore.selectedTeamId
-      console.log('saveEvent - Team ID was missing, set to:', eventForm.teamId)
     }
 
     // Get all dates to create availability for
@@ -830,8 +950,6 @@ const addEveryWeekendThisMonth = () => {
   const year = currentYear.value
   const month = currentMonth.value
   
-  console.log('Adding weekends for calendar month:', month + 1, 'year:', year)
-  
   // Get first and last day of current displayed month
   const firstDay = new Date(year, month, 1)
   const lastDay = new Date(year, month + 1, 0)
@@ -870,8 +988,6 @@ const addEveryWeekendThisMonth = () => {
     current.setDate(current.getDate() + 1)
   }
   
-  console.log('Found weekend ranges:', weekendRanges)
-  
   if (weekendRanges.length > 0) {
     // Use the first Friday and last Sunday across all weekend ranges
     eventForm.startDate = weekendRanges[0].start
@@ -881,9 +997,6 @@ const addEveryWeekendThisMonth = () => {
     if (!eventForm.teamId && viewingAsTeamStore.selectedTeamId) {
       eventForm.teamId = viewingAsTeamStore.selectedTeamId
     }
-    
-    console.log('Set date range:', eventForm.startDate, 'to', eventForm.endDate)
-    console.log('Team ID preserved:', eventForm.teamId)
   }
 }
 
@@ -911,4 +1024,50 @@ onMounted(async () => {
 watch(() => viewingAsTeamStore.selectedTeamId, () => {
   loadTeamCalendar()
 }, { immediate: false })
-</script> 
+</script>
+
+<style scoped>
+/* Enhanced date/time input styling for better desktop experience */
+input[type="date"], input[type="time"] {
+  position: relative;
+  background-image: none;
+}
+
+/* Webkit browsers date/time input styling */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Firefox date/time input styling */
+input[type="date"]::-moz-calendar-picker-indicator,
+input[type="time"]::-moz-time-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Ensure the custom icons are visible */
+.input-field:focus + div svg,
+.input-field:hover + div svg {
+  @apply text-primary-500;
+}
+
+/* Improve hover state for date/time inputs */
+input[type="date"]:hover,
+input[type="time"]:hover {
+  @apply border-primary-300 dark:border-primary-600;
+}
+
+/* Active state styling */
+input[type="date"]:focus,
+input[type="time"]:focus {
+  @apply ring-2 ring-primary-500 ring-opacity-50 border-primary-500;
+}
+</style> 
