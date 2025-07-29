@@ -19,7 +19,7 @@
             </div>
             
             <button 
-              @click="showAddAvailabilityModal = true"
+              @click="openAddAvailabilityModal"
               class="btn btn-primary shrink-0 w-full sm:w-auto justify-center"
               :disabled="!viewingAsTeamStore.selectedTeam"
             >
@@ -129,7 +129,7 @@
             </svg>
             <p class="text-gray-500 dark:text-gray-400">No upcoming events</p>
             <button 
-              @click="showAddAvailabilityModal = true"
+              @click="openAddAvailabilityModal"
               class="btn btn-primary mt-4"
             >
               Add First Event
@@ -251,7 +251,9 @@
                     v-model="eventForm.startDate"
                     type="date"
                     required
+                    :min="getTodayDate()"
                     class="input-field"
+                    autocomplete="off"
                   />
                 </div>
                 <div v-if="eventForm.type === 'travel' || eventForm.type === 'available'">
@@ -260,7 +262,8 @@
                     v-model="eventForm.endDate"
                     type="date"
                     class="input-field"
-                    :min="eventForm.startDate"
+                    :min="eventForm.startDate || getTodayDate()"
+                    autocomplete="off"
                   />
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Creates individual entries for each date
@@ -308,8 +311,9 @@
                   <input
                     v-model="eventForm.time"
                     type="time"
-                    :required="!eventForm.allDay"
+                    :required="eventForm.type === 'available' && !eventForm.allDay"
                     class="input-field"
+                    autocomplete="off"
                   />
                 </div>
 
@@ -547,17 +551,34 @@ const resetForm = () => {
   })
 }
 
+const getTodayDate = () => {
+  return new Date().toISOString().split('T')[0]
+}
+
+const openAddAvailabilityModal = () => {
+  // Reset the form first
+  resetFormForType()
+  // Set today as default start date
+  eventForm.startDate = getTodayDate()
+  // Open the modal
+  showAddAvailabilityModal.value = true
+}
+
 const resetFormForType = () => {
-  if (eventForm.type === 'travel') {
-    eventForm.startDate = ''
-    eventForm.endDate = ''
-    eventForm.allDay = false
+  // Reset common fields
+  eventForm.startDate = ''
+  eventForm.endDate = ''
+  eventForm.allDay = false
+  eventForm.notes = ''
+  
+  // Set appropriate defaults based on type
+  if (eventForm.type === 'available') {
+    eventForm.time = '09:00' // Default start time for hosting
+    eventForm.duration = '2'
+  } else if (eventForm.type === 'travel') {
     eventForm.time = ''
     eventForm.duration = ''
   } else {
-    eventForm.startDate = ''
-    eventForm.endDate = ''
-    eventForm.allDay = false
     eventForm.time = ''
     eventForm.duration = '2'
   }
@@ -599,12 +620,21 @@ const saveEvent = async () => {
   
   try {
     // Validate required fields based on type
-    if (eventForm.type === 'available' && !eventForm.allDay && !eventForm.time) {
-      throw new Error('Start time is required for hosting availability')
-    }
-    
     if (!eventForm.startDate) {
       throw new Error('Start date is required')
+    }
+    
+    if (eventForm.type === 'available' && !eventForm.allDay) {
+      if (!eventForm.time) {
+        throw new Error('Start time is required for hosting availability when not all-day')
+      }
+      if (!eventForm.duration) {
+        throw new Error('Duration is required for hosting availability')
+      }
+    }
+    
+    if (!eventForm.teamId) {
+      throw new Error('Team selection is required')
     }
 
     // Get all dates to create availability for
@@ -639,6 +669,9 @@ const saveEvent = async () => {
     } else {
       // Create new availability entries (one for each date)
       const createdEvents = []
+      let successCount = 0
+      let errorCount = 0
+      let lastError = null
       
       for (const date of datesToCreate) {
         console.log('Creating availability for date:', date)
@@ -653,10 +686,16 @@ const saveEvent = async () => {
         }
 
         console.log('Sending form data:', formData)
-        const result = await teamStore.addTeamAvailability(eventForm.teamId, formData)
+        // Suppress individual notifications for batch operations
+        const suppressNotification = datesToCreate.length > 1
+        const result = await teamStore.addTeamAvailability(eventForm.teamId, formData, suppressNotification)
+        
         if (result.error) {
           console.error('Error creating availability:', result.error)
-          throw result.error
+          errorCount++
+          lastError = result.error
+          // Continue with other dates instead of failing completely
+          continue
         }
         
         console.log('Created availability:', result.data)
@@ -666,11 +705,28 @@ const saveEvent = async () => {
           title: getEventTitle(eventForm.type, getTeamName(eventForm.teamId))
         }
         createdEvents.push(newEvent)
+        successCount++
       }
       
       console.log('Created', createdEvents.length, 'events')
       // Add all new events to the local array
       events.value.push(...createdEvents)
+      
+      // Show consolidated notification for batch operations
+      if (datesToCreate.length > 1) {
+        if (successCount > 0 && errorCount === 0) {
+          notificationStore.success('Availability Added', `Successfully added ${successCount} availability entries.`)
+        } else if (successCount > 0 && errorCount > 0) {
+          notificationStore.warning('Partially Completed', `Added ${successCount} entries. ${errorCount} failed.`)
+        } else if (errorCount > 0) {
+          throw lastError // This will be caught by the outer try-catch
+        }
+      }
+      
+      // If there were any errors and no successes, throw the last error
+      if (errorCount > 0 && successCount === 0) {
+        throw lastError
+      }
     }
     
     closeModal()

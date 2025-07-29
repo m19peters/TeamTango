@@ -517,7 +517,7 @@ export const useTeamStore = defineStore('teams', () => {
   }
 
   // Team Availability Management
-  const addTeamAvailability = async (teamId, availabilityData) => {
+  const addTeamAvailability = async (teamId, availabilityData, suppressNotification = false) => {
     try {
       const insertData = {
         team_id: teamId,
@@ -529,8 +529,11 @@ export const useTeamStore = defineStore('teams', () => {
 
       // Only add time and duration for host availability when not all day
       if (availabilityData.type === 'available' && !availabilityData.allDay) {
+        if (!availabilityData.time) {
+          throw new Error('Start time is required for hosting availability when not all-day')
+        }
         insertData.time = availabilityData.time
-        insertData.duration = parseFloat(availabilityData.duration)
+        insertData.duration = parseFloat(availabilityData.duration) || 2
       }
 
       const { data, error } = await supabase
@@ -539,13 +542,28 @@ export const useTeamStore = defineStore('teams', () => {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        // Provide more specific error messages
+        if (error.code === '23505') {
+          throw new Error('Availability already exists for this date and team')
+        } else if (error.code === '23503') {
+          throw new Error('Invalid team ID')
+        } else if (error.code === '23514') {
+          throw new Error('Invalid data format - please check all required fields')
+        } else {
+          throw new Error(`Database error: ${error.message}`)
+        }
+      }
 
-      notificationStore.success('Availability Added', 'Team availability has been updated.')
+      if (!suppressNotification) {
+        notificationStore.success('Availability Added', 'Team availability has been updated.')
+      }
       return { data, error: null }
     } catch (error) {
       console.error('Error adding availability:', error)
-      notificationStore.error('Failed to Add Availability', error.message)
+      if (!suppressNotification) {
+        notificationStore.error('Failed to Add Availability', error.message)
+      }
       return { data: null, error }
     }
   }

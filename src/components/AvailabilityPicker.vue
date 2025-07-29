@@ -182,7 +182,6 @@ watch(() => props.modelValue, (newValue) => {
 // Watch for changes to selectedDates and emit (only when different)
 watch(selectedDates, (newValue, oldValue) => {
   if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
-    console.log('AvailabilityPicker emit update:modelValue:', newValue)
     emit('update:modelValue', [...newValue])
   }
 }, { deep: true })
@@ -230,8 +229,6 @@ const toggleDate = (dateOption) => {
   const currentDates = [...selectedDates.value]
   const index = currentDates.indexOf(date)
   
-  console.log('toggleDate called:', { date, currentSelection: currentDates, index })
-  
   if (index > -1) {
     // Remove date
     currentDates.splice(index, 1)
@@ -242,7 +239,6 @@ const toggleDate = (dateOption) => {
   
   // Update with new array reference
   selectedDates.value = currentDates
-  console.log('toggleDate after change:', selectedDates.value)
 }
 
 const removeDate = (date) => {
