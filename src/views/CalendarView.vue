@@ -399,7 +399,11 @@ const eventForm = reactive({
 
 // Watch for team changes and update form
 watch(() => viewingAsTeamStore.selectedTeamId, (newTeamId) => {
-  eventForm.teamId = newTeamId || ''
+  // Only update if we have a valid team ID, don't clear it if it becomes null temporarily
+  if (newTeamId) {
+    eventForm.teamId = newTeamId
+    console.log('Team changed in form:', newTeamId)
+  }
 }, { immediate: true })
 
 // Calendar related computed properties
@@ -560,6 +564,8 @@ const openAddAvailabilityModal = () => {
   resetFormForType()
   // Set today as default start date
   eventForm.startDate = getTodayDate()
+  // Ensure team ID is set from the selected viewing team
+  eventForm.teamId = viewingAsTeamStore.selectedTeamId || ''
   // Open the modal
   showAddAvailabilityModal.value = true
 }
@@ -619,6 +625,13 @@ const saveEvent = async () => {
   loading.value = true
   
   try {
+    console.log('saveEvent - Form state:', {
+      teamId: eventForm.teamId,
+      selectedTeamId: viewingAsTeamStore.selectedTeamId,
+      startDate: eventForm.startDate,
+      type: eventForm.type
+    })
+    
     // Validate required fields based on type
     if (!eventForm.startDate) {
       throw new Error('Start date is required')
@@ -633,8 +646,14 @@ const saveEvent = async () => {
       }
     }
     
-    if (!eventForm.teamId) {
+    if (!viewingAsTeamStore.selectedTeamId) {
       throw new Error('Team selection is required')
+    }
+    
+    // Ensure eventForm has the current selected team
+    if (!eventForm.teamId) {
+      eventForm.teamId = viewingAsTeamStore.selectedTeamId
+      console.log('saveEvent - Team ID was missing, set to:', eventForm.teamId)
     }
 
     // Get all dates to create availability for
@@ -857,7 +876,14 @@ const addEveryWeekendThisMonth = () => {
     // Use the first Friday and last Sunday across all weekend ranges
     eventForm.startDate = weekendRanges[0].start
     eventForm.endDate = weekendRanges[weekendRanges.length - 1].end
+    
+    // Ensure team ID is preserved
+    if (!eventForm.teamId && viewingAsTeamStore.selectedTeamId) {
+      eventForm.teamId = viewingAsTeamStore.selectedTeamId
+    }
+    
     console.log('Set date range:', eventForm.startDate, 'to', eventForm.endDate)
+    console.log('Team ID preserved:', eventForm.teamId)
   }
 }
 
