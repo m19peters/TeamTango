@@ -1,251 +1,264 @@
-# TeamTango - Youth Sports Team Matchmaking App
+# TeamTango - Youth Sports Team Matchmaking Platform
 
-TeamTango is a mobile-friendly Vue.js application that helps youth sports teams connect with each other to schedule matches. Built with modern web technologies and deployable to iOS, Android, and web browsers.
+TeamTango is a comprehensive mobile-first application that connects youth sports teams for competitive matchups. Built with modern web technologies, it provides a seamless experience across web, iOS, and Android platforms.
 
-## Features
+## 🏆 Features
 
-- **Team Management**: Create and manage multiple sports teams with detailed profiles
-- **Availability Calendar**: Set when your teams are available to host or travel for matches
-- **Team Discovery**: Search and filter other teams by sport, skill level, location, and availability
-- **Match Requests**: Send and receive match requests with other teams
-- **Mobile-First Design**: Responsive design optimized for mobile devices
-- **Cross-Platform**: Deploy to iOS, Android, and web browsers
+### Core Functionality
+- **Multi-Team Management**: Create and manage multiple sports teams with detailed profiles including logos, venues, and contact information
+- **Smart Team Discovery**: Advanced search with like/dislike system, proximity-based filtering, and intelligent matching
+- **Real-Time Messaging**: Instant communication between teams with availability date embedding and read receipts
+- **Interactive Calendar**: Comprehensive availability management with visual calendar interface
+- **Global Team Context**: "Viewing as team" functionality for managing multiple teams seamlessly
 
-## Tech Stack
+### User Experience
+- **Mobile-First Design**: Optimized responsive interface with native mobile navigation
+- **Dark Mode**: System-aware theme with user preference persistence in database
+- **Real-Time Updates**: Live messaging and notification system using Supabase Realtime
+- **Proximity Search**: Location-based team discovery with distance calculations
+- **Smart Interactions**: Like/dislike system with interaction history and recommendations
 
-- **Frontend**: Vue 3 with Composition API
-- **Mobile**: Capacitor for native iOS and Android deployment
-- **Backend**: Supabase (PostgreSQL database, authentication, real-time features)
-- **Styling**: Tailwind CSS with custom components
-- **State Management**: Pinia
-- **Routing**: Vue Router 4
-- **Build Tool**: Vite
+### Team Management
+- **Soft Deletion**: Mark teams as inactive without losing data, with reactivation capability
+- **Logo Management**: Custom team logo upload and display throughout the application
+- **Venue Information**: Detailed home venue and address management with geocoding support
+- **Team Statistics**: Dashboard with interaction counts, message statistics, and activity metrics
+- **Form Validation**: Comprehensive client-side validation for phone numbers, addresses, and required fields
 
-## Quick Start
+### Communication System
+- **Message Threads**: Organized conversations grouped by team interactions
+- **Availability Integration**: Embed proposed dates directly into messages with visual tags
+- **Message Status**: Track message delivery and interaction states
+- **Inactive Team Handling**: Graceful handling of communications with deactivated teams
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Vue 3** with Composition API and `<script setup>` syntax
+- **Pinia** for state management with persistent stores
+- **Vue Router 4** for client-side routing
+- **Tailwind CSS** for utility-first styling with custom components
+- **Vite** for lightning-fast development and building
+
+### Mobile Development
+- **Capacitor 6** for cross-platform mobile deployment
+- **Native iOS/Android** integration with platform-specific optimizations
+
+### Backend & Services
+- **Supabase** comprehensive backend solution:
+  - PostgreSQL database with Row Level Security (RLS)
+  - Real-time subscriptions for live messaging
+  - Authentication with email/password
+  - File storage for team logos
+- **PostGIS** extension for geospatial queries and proximity search
+- **Multiple Geocoding APIs** (OpenStreetMap Nominatim, MapBox, Google Maps)
+
+### Development Tools
+- **ESLint** for code quality
+- **PostCSS** for CSS processing
+- **Environment Variables** for configuration management
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and npm
-- Supabase account (for backend services)
+- **Node.js 18+** and npm
+- **Supabase account** for backend services
 - For mobile development:
-  - Xcode (for iOS development)
-  - Android Studio (for Android development)
+  - **Xcode** (iOS development on macOS)
+  - **Android Studio** (Android development)
 
-### Setup
+### Installation
 
 1. **Clone and install dependencies**
    ```bash
+   git clone <repository-url>
    cd team-matchup-app
-npm install
-```
+   npm install
+   ```
 
-2. **Configure Supabase**
-   - Create a new project at [Supabase](https://supabase.com)
-   - Get your project URL and anon key from the project dashboard
-   - Update `src/config/supabase.js` with your credentials:
-     ```javascript
-     const supabaseUrl = 'your-project-url'
-     const supabaseAnonKey = 'your-anon-key'
-     ```
+2. **Environment Setup**
+   Create a `.env.local` file with your configuration:
+   ```env
+   VITE_SUPABASE_URL=your-supabase-project-url
+   VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+   VITE_MAPBOX_API_KEY=your-mapbox-api-key (optional)
+   VITE_GOOGLE_MAPS_API_KEY=your-google-maps-api-key (optional)
+   ```
 
-3. **Run development server**
+3. **Database Setup**
+   Run the provided SQL scripts in your Supabase SQL Editor:
    ```bash
-npm run dev
-```
+   # Run these in order:
+   database/setup.sql
+   database/setup_storage.sql
+   database/add_team_logo_migration.sql
+   database/add_theme_preference_migration.sql
+   ```
+
+4. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
    Open http://localhost:5173 in your browser
 
-## Database Setup
-
-You'll need to set up the following tables in your Supabase database:
+## 🗄️ Database Schema
 
 ### Core Tables
 
-```sql
--- Sports reference table
-CREATE TABLE sports (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name VARCHAR(50) NOT NULL UNIQUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+- **`sports`**: Reference table for available sports
+- **`user_profiles`**: Extended user information with theme preferences
+- **`teams`**: Team profiles with geocoding and soft deletion support
+- **`team_availability`**: Calendar-based availability management
+- **`match_requests`**: Message conversation threads between teams
+- **`team_messages`**: Individual messages within conversations
+- **`team_interactions`**: Like/dislike system for team discovery
+- **`team_interaction_stats`**: Aggregated statistics for dashboard
 
--- User profiles (extends auth.users)
-CREATE TABLE user_profiles (
-  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  email VARCHAR(255) NOT NULL,
-  first_name VARCHAR(100),
-  last_name VARCHAR(100),
-  phone VARCHAR(20),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+### Database Views
 
--- Teams table
-CREATE TABLE teams (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  name VARCHAR(100) NOT NULL,
-  sport_id UUID REFERENCES sports(id),
-  skill_level VARCHAR(20) CHECK (skill_level IN ('Beginner', 'Intermediate', 'Advanced', 'Elite')),
-  phone VARCHAR(20),
-  city VARCHAR(50),
-  state VARCHAR(2),
-  zip VARCHAR(10),
-  home_venue VARCHAR(100),
-  venue_address TEXT,
-  description TEXT,
-  status VARCHAR(20) DEFAULT 'Active',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+- **`team_conversations`**: Consolidated view of message threads with participant details
+- **`team_interaction_stats`**: Real-time statistics for dashboard displays
 
--- Team availability
-CREATE TABLE team_availability (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
-  date DATE NOT NULL,
-  time TIME NOT NULL,
-  duration DECIMAL(3,1) DEFAULT 2.0,
-  type VARCHAR(20) CHECK (type IN ('available', 'travel', 'unavailable')),
-  notes TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+### Key Features
 
--- Match requests
-CREATE TABLE match_requests (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  requesting_team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
-  target_team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
-  preferred_dates TEXT,
-  message TEXT,
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'cancelled')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
+- **Row Level Security (RLS)**: Comprehensive security policies for data protection
+- **Real-time Subscriptions**: Live updates for messaging and interactions
+- **PostGIS Integration**: Spatial queries for proximity-based team discovery
+- **Soft Deletion**: `active` flags for non-destructive team management
 
-### Enable Row Level Security (RLS)
+## 📱 Mobile Development
 
-```sql
--- Enable RLS on all tables
-ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE team_availability ENABLE ROW LEVEL SECURITY;
-ALTER TABLE match_requests ENABLE ROW LEVEL SECURITY;
-
--- Create policies (example for teams table)
-CREATE POLICY "Users can view all teams" ON teams FOR SELECT USING (true);
-CREATE POLICY "Users can manage their own teams" ON teams FOR ALL USING (auth.uid() = user_id);
-```
-
-## Mobile Development
-
-### Build for Mobile
+### Build Commands
 
 ```bash
-# Build the web app and sync with mobile platforms
+# Build and sync with mobile platforms
 npm run mobile:build
 
-# Open in Xcode (iOS)
-npm run mobile:ios
+# Open in development environments
+npm run mobile:ios      # Opens in Xcode
+npm run mobile:android  # Opens in Android Studio
 
-# Open in Android Studio
-npm run mobile:android
-
-# Run directly on connected device/simulator
+# Run on devices/simulators
 npm run mobile:run:ios
 npm run mobile:run:android
 ```
 
-### Prerequisites for Mobile Development
+### Mobile-Specific Features
 
-**For iOS:**
-- macOS with Xcode installed
-- iOS Simulator or physical iOS device
-- Apple Developer account (for device testing and App Store deployment)
+- **Native Navigation**: Bottom tab navigation optimized for mobile use
+- **Mobile Header**: Top navigation with logout functionality and branding
+- **Touch Optimizations**: Gesture-friendly interfaces and touch targets
+- **Responsive Design**: Adaptive layouts for various screen sizes
 
-**For Android:**
-- Android Studio installed
-- Android SDK and emulator set up
-- Physical Android device or emulator
+## 🏗️ Project Structure
 
-## Deployment
+```
+team-matchup-app/
+├── src/
+│   ├── components/
+│   │   ├── AvailabilityPicker.vue    # Date selection for messages
+│   │   ├── MessageDisplay.vue        # Message rendering with date tags
+│   │   ├── Toast.vue                 # Notification system
+│   │   └── ViewingAsTeamSelector.vue # Team context switching
+│   ├── views/
+│   │   ├── HomeView.vue             # Landing page
+│   │   ├── LoginView.vue            # Authentication
+│   │   ├── TeamManagementView.vue   # Team CRUD & dashboard
+│   │   ├── CalendarView.vue         # Availability management
+│   │   ├── DiscoveryView.vue        # Team discovery & matching
+│   │   └── MessageView.vue          # Real-time messaging
+│   ├── stores/
+│   │   ├── auth.js                  # Authentication state
+│   │   ├── teams.js                 # Team management
+│   │   ├── messages.js              # Messaging system
+│   │   ├── interactions.js          # Like/dislike system
+│   │   ├── dashboard.js             # Statistics and metrics
+│   │   ├── notifications.js         # Toast notifications
+│   │   ├── theme.js                 # Dark mode with persistence
+│   │   └── viewingAsTeam.js         # Team context management
+│   ├── utils/
+│   │   ├── messageUtils.js          # Message formatting utilities
+│   │   └── geocoding.js             # Location services
+│   ├── config/
+│   │   └── supabase.js              # Supabase client configuration
+│   └── assets/                      # Static assets and styling
+├── database/                        # SQL migration scripts
+├── android/                         # Android platform files
+├── ios/                            # iOS platform files
+└── public/                         # Static public assets
+```
+
+## 🎯 Key Features Deep Dive
+
+### Team Discovery System
+- **Proximity Search**: Find teams within specified distance using PostGIS
+- **Like/Dislike Mechanism**: Tinder-style interaction system
+- **Smart Filtering**: Sport, skill level, age group, and availability filters
+- **Interaction History**: Track and prevent duplicate interactions
+
+### Real-Time Messaging
+- **Live Updates**: Instant message delivery using Supabase Realtime
+- **Date Embedding**: Propose game dates directly within messages
+- **Conversation Management**: Organized threads between team pairs
+- **Status Tracking**: Message read receipts and delivery status
+
+### Multi-Team Management
+- **Global Context**: Switch between teams seamlessly across all views
+- **Team Dashboard**: Statistics, interactions, and activity metrics
+- **Soft Deletion**: Mark teams inactive without data loss
+- **Bulk Operations**: Manage multiple teams efficiently
+
+### Mobile Experience
+- **Native Feel**: Platform-specific navigation and interactions
+- **Responsive Design**: Optimized for all screen sizes
+- **Touch Gestures**: Mobile-first interaction patterns
+- **Offline Resilience**: Graceful handling of connectivity issues
+
+## 🔧 Customization
+
+### Adding New Sports
+Update the sports table and form options:
+```sql
+INSERT INTO sports (name) VALUES ('New Sport');
+```
+
+### Modifying UI Theme
+Update Tailwind configuration in `tailwind.config.js` or modify CSS custom properties.
+
+### Geocoding Services
+Configure multiple providers in `src/utils/geocoding.js` for redundancy and global coverage.
+
+## 📦 Deployment
 
 ### Web Deployment
-
-Build for production:
 ```bash
 npm run build
+# Deploy dist/ folder to Vercel, Netlify, or any static host
 ```
 
-Deploy the `dist` folder to any static hosting service (Vercel, Netlify, AWS S3, etc.)
+### Mobile App Stores
+1. **iOS**: Use Xcode for App Store Connect deployment
+2. **Android**: Generate signed APK/AAB for Google Play Console
 
-### Mobile App Store Deployment
-
-1. **iOS App Store:**
-   - Open the project in Xcode: `npm run mobile:ios`
-   - Configure signing and capabilities
-   - Build and upload to App Store Connect
-
-2. **Google Play Store:**
-   - Open in Android Studio: `npm run mobile:android`
-   - Generate signed APK/AAB
-   - Upload to Google Play Console
-
-## Development Guide
-
-### Project Structure
-
-```
-src/
-├── components/          # Reusable Vue components
-├── views/              # Page components
-│   ├── HomeView.vue    # Landing page
-│   ├── LoginView.vue   # Authentication
-│   ├── DashboardView.vue   # Main dashboard
-│   ├── TeamManagementView.vue  # Team CRUD
-│   ├── CalendarView.vue    # Availability management
-│   └── DiscoveryView.vue   # Team discovery
-├── stores/             # Pinia state management
-│   └── auth.js         # Authentication store
-├── config/             # Configuration files
-│   └── supabase.js     # Supabase client setup
-└── assets/             # Static assets and styles
-```
-
-### Key Features Implementation
-
-1. **Authentication**: Uses Supabase Auth with email/password
-2. **Team Management**: Full CRUD operations for team profiles
-3. **Calendar System**: Interactive calendar for availability management
-4. **Discovery**: Advanced filtering and search for finding teams
-5. **Match Requests**: Messaging system for coordinating games
-
-### Customization
-
-- **Sports**: Add/remove sports in the sports reference table
-- **Skill Levels**: Modify in the database schema and form options
-- **Styling**: Update Tailwind configuration in `tailwind.config.js`
-- **Mobile Icons**: Replace icons in `public/` folder
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test on web and mobile platforms
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Support
+## 📄 License
 
-For questions or support:
-- Check the documentation
-- Review the code comments
-- Open an issue on GitHub
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## License
+## 🙏 Acknowledgments
 
-This project is open source and available under the MIT License.
+- **Supabase** for providing an excellent backend-as-a-service platform
+- **Vue.js Community** for the amazing ecosystem and tools
+- **Capacitor Team** for seamless cross-platform mobile development
 
 ---
 
-**TeamTango** - Connecting youth sports teams, one match at a time! 🏒⚽🏀
+**TeamTango** - Connecting youth sports teams, one match at a time! 🏒⚾🏀🏈⚽
