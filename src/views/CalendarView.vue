@@ -3,32 +3,35 @@
     <!-- Header -->
     <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 md:mt-16">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
           <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Calendar</h1>
             <p class="text-gray-600 dark:text-gray-300">Manage your team's availability</p>
           </div>
-          <button 
-            @click="showAddAvailabilityModal = true"
-            class="btn btn-primary shrink-0"
-          >
-            + Add Availability
-          </button>
+          
+          <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <!-- Viewing As Team Selector -->
+            <div class="w-full sm:w-auto">
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
+                Calendar for
+              </label>
+              <ViewingAsTeamSelector />
+            </div>
+            
+            <button 
+              @click="showAddAvailabilityModal = true"
+              class="btn btn-primary shrink-0 w-full sm:w-auto justify-center"
+              :disabled="!viewingAsTeamStore.selectedTeam"
+            >
+              + Add Availability
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Team Selection -->
+    <!-- Calendar Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Team</label>
-        <select v-model="selectedTeam" @change="loadTeamCalendar" class="input-field max-w-xs">
-          <option value="">All Teams</option>
-          <option v-for="team in teams" :key="team.id" :value="team.id">
-            {{ team.name }}
-          </option>
-        </select>
-      </div>
 
       <!-- Calendar Navigation -->
       <div class="bg-white dark:bg-slate-800 rounded-lg shadow border border-gray-200 dark:border-slate-700 mb-6">
@@ -169,8 +172,8 @@
     </div>
 
     <!-- Add/Edit Availability Modal -->
-    <div v-if="showAddAvailabilityModal || editingEvent" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 pb-20 md:pb-4">
-      <div class="bg-white dark:bg-slate-800 rounded-lg max-w-md w-full max-h-[calc(100vh-6rem)] md:max-h-[calc(100vh-2rem)] overflow-y-auto">
+    <div v-if="showAddAvailabilityModal || editingEvent" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
+              <div class="bg-white dark:bg-slate-800 rounded-lg max-w-md w-full max-h-[85vh] overflow-y-auto shadow-2xl">
         <div class="p-6">
           <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
@@ -187,14 +190,29 @@
           </div>
 
           <form @submit.prevent="saveEvent" class="space-y-4">
-            <div>
+            <!-- Team Display -->
+            <div v-if="viewingAsTeamStore.selectedTeam" class="bg-gray-50 dark:bg-slate-700 rounded-lg p-4">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Team</label>
-              <select v-model="eventForm.teamId" required class="input-field">
-                <option value="">Select a team</option>
-                <option v-for="team in teams" :key="team.id" :value="team.id">
-                  {{ team.name }}
-                </option>
-              </select>
+              <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                  <div v-if="viewingAsTeamStore.selectedTeam.logo_url" 
+                       class="w-8 h-8 rounded-full overflow-hidden border border-gray-200 dark:border-slate-600">
+                    <img :src="viewingAsTeamStore.selectedTeam.logo_url" 
+                         :alt="`${viewingAsTeamStore.selectedTeam.name} logo`" 
+                         class="w-full h-full object-cover">
+                  </div>
+                  <div v-else 
+                       class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-xs font-bold">
+                    {{ viewingAsTeamStore.selectedTeam.name.charAt(0).toUpperCase() }}
+                  </div>
+                </div>
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-gray-100">{{ viewingAsTeamStore.selectedTeam.name }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ viewingAsTeamStore.selectedTeam.sport?.name }} • {{ viewingAsTeamStore.selectedTeam.age_group }}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -345,16 +363,18 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useTeamStore } from '../stores/teams.js'
 import { useNotificationStore } from '../stores/notifications.js'
+import { useViewingAsTeamStore } from '../stores/viewingAsTeam.js'
+import ViewingAsTeamSelector from '../components/ViewingAsTeamSelector.vue'
 
 const teamStore = useTeamStore()
 const notificationStore = useNotificationStore()
+const viewingAsTeamStore = useViewingAsTeamStore()
 
 const showAddAvailabilityModal = ref(false)
 const editingEvent = ref(null)
-const selectedTeam = ref('')
 const currentDate = ref(new Date())
 const events = ref([])
 const loading = ref(false)
@@ -372,6 +392,11 @@ const eventForm = reactive({
   allDay: false,
   notes: ''
 })
+
+// Watch for team changes and update form
+watch(() => viewingAsTeamStore.selectedTeamId, (newTeamId) => {
+  eventForm.teamId = newTeamId || ''
+}, { immediate: true })
 
 // Calendar related computed properties
 const currentMonth = computed(() => currentDate.value.getMonth())
@@ -412,10 +437,8 @@ const calendarDays = computed(() => {
   return days
 })
 
-const filteredEvents = computed(() => {
-  if (!selectedTeam.value) return events.value
-  return events.value.filter(event => event.team_id === selectedTeam.value)
-})
+// Since we're only loading one team's calendar now, no filtering needed
+const filteredEvents = computed(() => events.value)
 
 const upcomingEvents = computed(() => {
   const now = new Date()
@@ -678,23 +701,26 @@ const loadTeamCalendar = async () => {
     loading.value = true
     events.value = []
     
-    const teamsToLoad = selectedTeam.value ? [selectedTeam.value] : teams.value.map(t => t.id)
-    
-    for (const teamId of teamsToLoad) {
-      const result = await teamStore.getTeamAvailability(teamId)
-      if (result.error) {
-        console.error('Error loading calendar for team:', teamId, result.error)
-        continue
-      }
-      
-      const teamEvents = result.data.map(availability => ({
-        ...availability,
-        team: getTeamName(teamId),
-        title: getEventTitle(availability.type, getTeamName(teamId))
-      }))
-      
-      events.value.push(...teamEvents)
+    // Only load calendar for the selected viewing team
+    if (!viewingAsTeamStore.selectedTeamId) {
+      loading.value = false
+      return
     }
+    
+    const result = await teamStore.getTeamAvailability(viewingAsTeamStore.selectedTeamId)
+    if (result.error) {
+      console.error('Error loading calendar for team:', viewingAsTeamStore.selectedTeamId, result.error)
+      loading.value = false
+      return
+    }
+    
+    const teamEvents = result.data.map(availability => ({
+      ...availability,
+      team: viewingAsTeamStore.selectedTeam.name,
+      title: getEventTitle(availability.type, viewingAsTeamStore.selectedTeam.name)
+    }))
+    
+    events.value = teamEvents
   } catch (error) {
     console.error('Error loading team calendar:', error)
     notificationStore.error('Loading Failed', 'Failed to load calendar data')
@@ -798,4 +824,9 @@ onMounted(async () => {
   await teamStore.loadUserTeams()
   await loadTeamCalendar()
 })
+
+// Watch for viewing team changes and reload calendar
+watch(() => viewingAsTeamStore.selectedTeamId, () => {
+  loadTeamCalendar()
+}, { immediate: false })
 </script> 

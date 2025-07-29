@@ -1,42 +1,64 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-slate-900 pb-20 md:pb-0 transition-colors duration-300">
-    <!-- Header with gradient background -->
-    <div class="bg-pattern border-b border-gray-200 dark:border-slate-700 md:mt-16">
-      <div class="glass">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div class="flex items-center justify-between">
-            <div class="fade-in">
-              <h1 class="text-3xl font-bold text-gradient mb-2">Find Your Match</h1>
-              <p class="text-gray-600 dark:text-gray-400">Browse teams to find your perfect opponent</p>
+    <!-- Header -->
+    <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 md:mt-16">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Discover Teams</h1>
+            <p class="text-gray-600 dark:text-gray-300">Find teams to play against and build connections</p>
+          </div>
+          
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <!-- Viewing As Team Selector -->
+            <div class="w-full sm:w-auto">
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
+                Discovering as
+              </label>
+              <ViewingAsTeamSelector />
             </div>
-            <button 
-              @click="showFilters = !showFilters"
-              class="btn btn-secondary flex items-center space-x-2 slide-up shrink-0"
+            
+            <!-- Show Only New Teams Toggle -->
+            <div class="flex items-center space-x-2">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  :checked="!primaryFilters.showInteracted"
+                  @change="toggleNewTeamsOnly"
+                  class="sr-only peer"
+                >
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+              </label>
+              <span class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Show only new
+              </span>
+            </div>
+            
+            <button
+              @click="showAdvancedFilters = !showAdvancedFilters"
+              class="btn btn-secondary shrink-0 w-full sm:w-auto justify-center"
             >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
               </svg>
-              <span>Filters</span>
+              Advanced Filters
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Filters Panel -->
-    <div v-if="showFilters" class="glass border-b border-gray-200 dark:border-slate-700 slide-up">
+
+
+    <!-- Advanced Filters Panel -->
+    <div v-if="showAdvancedFilters" class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Advanced Search</h3>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sport</label>
-            <select v-model="filters.sport" @change="loadTeams" class="input-field">
-              <option value="">All Sports</option>
-              <option v-for="sport in availableSports" :key="sport" :value="sport">{{ sport }}</option>
-            </select>
-          </div>
+          <!-- Age Group -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Age Group</label>
-            <select v-model="filters.ageGroup" @change="loadTeams" class="input-field">
+            <select v-model="advancedFilters.ageGroup" @change="loadTeams" class="input-field">
               <option value="">All Ages</option>
               <option value="6U">6U</option>
               <option value="7U">7U</option>
@@ -54,9 +76,11 @@
               <option value="18+">18+</option>
             </select>
           </div>
+
+          <!-- Skill Level -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Skill Level</label>
-            <select v-model="filters.skillLevel" @change="loadTeams" class="input-field">
+            <select v-model="advancedFilters.skillLevel" @change="loadTeams" class="input-field">
               <option value="">All Levels</option>
               <option value="Beginner">Beginner</option>
               <option value="Intermediate">Intermediate</option>
@@ -64,9 +88,11 @@
               <option value="Elite">Elite</option>
             </select>
           </div>
+
+          <!-- Proximity -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Distance</label>
-            <select v-model="filters.distance" @change="loadTeams" class="input-field">
+            <select v-model="advancedFilters.distance" @change="loadTeams" class="input-field">
               <option value="">Any Distance</option>
               <option value="10">Within 10 miles</option>
               <option value="25">Within 25 miles</option>
@@ -74,21 +100,36 @@
               <option value="100">Within 100 miles</option>
             </select>
           </div>
+
+          <!-- Availability -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Availability</label>
-            <select v-model="filters.availability" @change="loadTeams" class="input-field">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Can Host/Travel</label>
+            <select v-model="advancedFilters.availability" @change="loadTeams" class="input-field">
               <option value="">Any</option>
               <option value="host">Can Host</option>
               <option value="travel">Can Travel</option>
               <option value="both">Both Host & Travel</option>
             </select>
           </div>
+
+          <!-- Interaction Filter -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Show Interacted</label>
-            <select v-model="filters.showInteracted" @change="loadTeams" class="input-field">
-              <option :value="true">Show All Teams</option>
-              <option :value="false">Hide Already Interacted</option>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Interactions</label>
+            <select v-model="advancedFilters.interactionFilter" @change="loadTeams" class="input-field">
+              <option value="">All teams</option>
+              <option value="liked">Teams I liked</option>
+              <option value="disliked">Teams I disliked</option>
+              <option value="no_interaction">No interaction yet</option>
             </select>
+          </div>
+
+          <!-- Team Name Search -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Team Name</label>
+            <input v-model="advancedFilters.teamName" 
+                   @input="debouncedLoadTeams"
+                   placeholder="Search team names..."
+                   class="input-field">
           </div>
         </div>
       </div>
@@ -98,295 +139,156 @@
     <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-20">
-        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-600 dark:border-primary-400 mx-auto mb-4"></div>
-        <p class="text-gray-600 dark:text-gray-400">Finding amazing teams for you...</p>
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-600 dark:border-primary-400 mx-auto"></div>
+        <p class="text-gray-600 dark:text-gray-400 mt-4">Finding teams for you...</p>
       </div>
 
-      <!-- No Teams State -->
+      <!-- Empty State -->
       <div v-else-if="teams.length === 0" class="text-center py-20">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 card-hover">
-          <svg class="w-20 h-20 mx-auto mb-6 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="text-gray-500 dark:text-gray-400">
+          <svg class="w-16 h-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">No Teams Found</h3>
-          <p class="text-gray-600 dark:text-gray-400 mb-6">
-            {{ !filters.showInteracted ? 
-               "You've interacted with all available teams! Try enabling 'Show All Teams' in filters to see them again." :
-               "We couldn't find any teams matching your criteria. Try adjusting your filters or check back later!"
-            }}
-          </p>
-          <div class="space-y-3">
-            <button 
-              @click="resetAndReload"
-              class="btn btn-primary bounce-in w-full"
-            >
-              <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Refresh Teams
-            </button>
-            
-            <button 
-              v-if="passedTeams.size > 0"
-              @click="clearPassedTeams"
-              class="btn btn-secondary w-full"
-            >
-              <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Clear Passed Teams ({{ passedTeams.size }})
-            </button>
-          </div>
+          <h3 class="text-lg font-medium mb-2">No teams found</h3>
+          <p class="text-sm">Try adjusting your filters or check back later for new teams.</p>
         </div>
       </div>
 
-      <!-- Teams Feed -->
+      <!-- Teams List -->
       <div v-else class="space-y-6">
-        <div 
-          v-for="team in teams" 
-          :key="team.id"
-          class="team-card bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-200 dark:border-slate-700 relative fade-in"
-        >
-          <!-- Interaction Status Badge -->
-          <div v-if="team.interactionStatus" class="absolute top-4 right-4 z-10">
-            <div 
-              class="status-interaction-badge"
-              :class="getInteractionStatusClass(team.interactionStatus.color)"
-            >
-              <span class="text-lg mr-1">{{ team.interactionStatus.icon }}</span>
-              <span class="text-sm font-medium">{{ team.interactionStatus.label }}</span>
+        <div v-for="team in teams" :key="team.id" 
+             class="team-card bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700 overflow-hidden hover:shadow-xl transition-all duration-300">
+          
+          <!-- Team Header -->
+          <div class="p-6 pb-4">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-start space-x-4 flex-1">
+                <!-- Team Logo -->
+                <div class="flex-shrink-0">
+                  <div v-if="team.logo_url" class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 dark:border-slate-600">
+                    <img :src="team.logo_url" :alt="`${team.name} logo`" class="w-full h-full object-cover">
+                  </div>
+                  <div v-else class="w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-xl font-bold border-2 border-gray-200 dark:border-slate-600">
+                    {{ team.name.charAt(0).toUpperCase() }}
+                  </div>
+                </div>
+                
+                <!-- Team Info -->
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{{ team.name }}</h3>
+                  <div class="space-y-1">
+                  <div class="flex items-center text-gray-600 dark:text-gray-400">
+                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                    <span class="font-medium">{{ team.sport?.name }} • {{ team.age_group }} • {{ team.skill_level }}</span>
+                  </div>
+                                     <div class="flex items-center text-gray-600 dark:text-gray-400">
+                     <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                     </svg>
+                     <span class="font-medium">{{ team.city }}, {{ team.state }}</span>
+                     <span v-if="team.distance" class="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full">
+                       {{ Math.round(team.distance) }} mi
+                     </span>
+                   </div>
+                </div>
+                </div>
+              </div>
+
+              <!-- Like/Dislike Stats -->
+              <div class="flex items-center space-x-3 text-sm">
+                <div class="flex items-center text-green-600 dark:text-green-400">
+                  <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                  </svg>
+                  <span>{{ team.stats.like_count }}</span>
+                </div>
+                <div class="flex items-center text-red-600 dark:text-red-400">
+                  <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.106-1.79l-.05-.025A4 4 0 0011.057 2H5.641a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.866a4 4 0 00.8-2.4z" />
+                  </svg>
+                  <span>{{ team.stats.dislike_count }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Team Description -->
+            <div v-if="team.description" class="mb-4">
+              <p class="text-gray-600 dark:text-gray-400 text-sm">{{ team.description }}</p>
+            </div>
+
+            <!-- Match Reasons -->
+            <div v-if="team.matchReasons && team.matchReasons.length > 0" class="mb-4">
+              <div class="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-3">
+                <h4 class="text-sm font-medium text-primary-800 dark:text-primary-200 mb-2 flex items-center">
+                  <span class="text-lg mr-2">🎯</span>
+                  Why this is a good match
+                </h4>
+                <div class="space-y-1">
+                  <div v-for="reason in team.matchReasons.slice(0, 2)" :key="reason.type" class="flex items-center text-xs">
+                    <span class="mr-2">{{ reason.icon }}</span>
+                    <span class="text-primary-700 dark:text-primary-300">{{ reason.description }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="p-8">
-            <!-- Team Header -->
-            <div class="text-center mb-6">
-              <!-- Team Logo -->
-              <div class="w-20 h-20 mx-auto mb-4 relative">
-                <img 
-                  v-if="team.logo_url" 
-                  :src="team.logo_url" 
-                  :alt="`${team.name} logo`"
-                  class="w-full h-full rounded-full object-cover border-2 border-primary-200 dark:border-primary-700 shadow-lg"
-                  @error="onImageError"
-                />
-                <div 
-                  v-else
-                  class="w-full h-full bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg"
-                >
-                  {{ team.name.charAt(0).toUpperCase() }}
-                </div>
-              </div>
-              
-              <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{{ team.name }}</h2>
-              <div class="flex items-center justify-center space-x-3">
-                <span class="status-badge" :class="getSkillLevelClass(team.skill_level)">
-                  {{ team.skill_level }}
-                </span>
-                <span class="px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium">
-                  {{ team.sport_name }}
-                </span>
-                <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
-                  {{ team.age_group }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Team Details -->
-            <div class="space-y-4 mb-6">
-              <div class="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div class="flex items-center text-gray-600 dark:text-gray-400">
-                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span class="font-medium">{{ team.city }}, {{ team.state }}</span>
-                  </div>
-                </div>
-                <div>
-                  <div class="flex items-center text-gray-600 dark:text-gray-400" v-if="team.home_venue">
-                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-3 4h1m-1 4h1" />
-                    </svg>
-                    <span class="font-medium">{{ team.home_venue }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="team.description" class="pt-2">
-                <span class="font-medium text-gray-500 dark:text-gray-400">About:</span>
-                <p class="text-gray-900 dark:text-gray-100 mt-1">{{ team.description }}</p>
-              </div>
-            </div>
-                  
-            <!-- Availability Indicators -->
-            <div class="flex justify-center space-x-4 mb-6">
-              <div v-if="team.can_host" class="flex items-center text-green-600 dark:text-green-400">
-                <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                <span class="text-sm font-medium">Can Host</span>
-              </div>
-              <div v-if="team.can_travel" class="flex items-center text-blue-600 dark:text-blue-400">
-                <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-                <span class="text-sm font-medium">Can Travel</span>
-              </div>
-            </div>
-
-            <!-- Enhanced Availability Display -->
-            <div v-if="team.upcoming_availability && team.upcoming_availability.length > 0" class="mb-6">
-              <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-                <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Upcoming Availability
-              </h4>
-              
-              <!-- Compact availability table -->
-              <div class="bg-gray-50 dark:bg-slate-700 rounded-lg p-3">
-                <div class="space-y-2">
-                  <div 
-                    v-for="slot in team.upcoming_availability.slice(0, 4)" 
-                    :key="slot.id"
-                    class="flex items-center justify-between text-sm"
-                  >
-                    <div class="flex items-center space-x-2">
-                      <div :class="getAvailabilityTypeClass(slot.type)" class="w-2 h-2 rounded-full"></div>
-                      <span class="font-medium text-gray-900 dark:text-gray-100">
-                        {{ formatDate(slot.date) }}
-                      </span>
-                    </div>
-                    <div class="text-gray-600 dark:text-gray-400">
-                      {{ slot.all_day ? 'All day' : (slot.time ? formatTime(slot.time) : 'All day') }}
-                      <span v-if="slot.type === 'available'" class="ml-1 text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-1 rounded">Host</span>
-                      <span v-if="slot.type === 'travel'" class="ml-1 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-1 rounded">Travel</span>
-                    </div>
-                  </div>
-                  
-                  <div v-if="team.upcoming_availability.length > 4" class="text-xs text-gray-500 dark:text-gray-400 text-center pt-1">
-                    +{{ team.upcoming_availability.length - 4 }} more dates
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- No availability notice -->
-            <div v-else class="mb-6">
-              <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                <p class="text-sm text-yellow-800 dark:text-yellow-200 flex items-center">
-                  <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  No upcoming availability listed
-                </p>
-              </div>
-            </div>
-
-            <!-- Match Compatibility Reasons -->
-            <div v-if="team.matchReasons && team.matchReasons.length > 0" class="mb-6">
-              <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-                <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Why this match?
-              </h4>
-              
-              <!-- Match reasons grid -->
-              <div class="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-3">
-                <div class="space-y-2">
-                  <div 
-                    v-for="reason in team.matchReasons.slice(0, 3)" 
-                    :key="reason.type"
-                    class="flex items-center text-sm"
-                  >
-                    <span class="text-lg mr-2">{{ reason.icon }}</span>
-                    <div class="flex-1">
-                      <span class="font-medium text-primary-800 dark:text-primary-200">{{ reason.title }}</span>
-                      <p class="text-primary-700 dark:text-primary-300 text-xs mt-1">{{ reason.description }}</p>
-                    </div>
-                  </div>
-                  
-                  <div v-if="team.matchReasons.length > 3" class="text-xs text-primary-600 dark:text-primary-400 text-center pt-1">
-                    +{{ team.matchReasons.length - 3 }} more reasons
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex space-x-4">
+          <!-- Action Buttons -->
+          <div class="p-6 pt-0">
+            <div class="flex space-x-3">
+              <!-- Dislike Button -->
               <button 
-                @click="passTeam(team)"
-                class="btn flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                :disabled="team.interactionStatus?.type === 'passed'"
+                @click="handleDislike(team)"
+                :disabled="loading || getUserInteractionType(team) === 'dislike'"
+                class="btn flex-1 flex items-center justify-center space-x-2 transition-all duration-200"
+                :class="[
+                  getUserInteractionType(team) === 'dislike' 
+                    ? 'bg-red-500 text-white cursor-not-allowed opacity-90' 
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400',
+                  (loading || getUserInteractionType(team) === 'dislike') ? 'pointer-events-none' : ''
+                ]"
               >
-                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.106-1.79l-.05-.025A4 4 0 0011.057 2H5.641a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.866a4 4 0 00.8-2.4z" />
                 </svg>
-                {{ team.interactionStatus?.type === 'passed' ? 'Already Passed' : 'Pass' }}
+                <span>{{ getUserInteractionType(team) === 'dislike' ? 'Disliked' : 'Dislike' }}</span>
+                <span class="text-xs opacity-75">({{ team.stats.dislike_count }})</span>
               </button>
-              
-              <!-- Dynamic Like Button Based on Status -->
+
+              <!-- Like Button -->
               <button 
-                v-if="!team.interactionStatus || team.interactionStatus.type === 'received'"
-                @click="likeTeam(team)"
-                class="btn btn-primary flex-1"
+                @click="handleLike(team)"
+                :disabled="loading || getUserInteractionType(team) === 'like'"
+                class="btn flex-1 flex items-center justify-center space-x-2 transition-all duration-200"
+                :class="[
+                  getUserInteractionType(team) === 'like' 
+                    ? 'bg-green-500 text-white cursor-not-allowed opacity-90' 
+                    : 'bg-primary-600 hover:bg-primary-700 text-white',
+                  (loading || getUserInteractionType(team) === 'like') ? 'pointer-events-none' : ''
+                ]"
               >
-                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
                 </svg>
-                {{ team.interactionStatus?.type === 'received' ? 'Respond' : 'Like' }}
+                <span>{{ getUserInteractionType(team) === 'like' ? 'Liked' : 'Like' }}</span>
+                <span class="text-xs opacity-75">({{ team.stats.like_count }})</span>
               </button>
-              
-              <!-- Already Liked/Matched State -->
+            </div>
+
+            <!-- Message Status -->
+            <div v-if="getMessageButtonStatus(team)" class="mt-3 text-center">
               <button 
-                v-else-if="team.interactionStatus.type === 'pending'"
-                class="btn flex-1 bg-blue-100 dark:bg-blue-700 text-blue-700 dark:text-blue-200 cursor-not-allowed"
-                disabled
+                @click="handleMessageButton(team)"
+                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105"
+                :class="getMessageButtonClass(team)"
               >
-                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                {{ getMessageButtonText(team) }}
+                <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
-                Request Pending
-              </button>
-              
-              <!-- Matched State -->
-              <button 
-                v-else-if="team.interactionStatus.type === 'matched'"
-                class="btn flex-1 bg-green-100 dark:bg-green-700 text-green-700 dark:text-green-200 cursor-not-allowed"
-                disabled
-              >
-                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Matched!
-              </button>
-              
-              <!-- Declined State -->
-              <button 
-                v-else-if="team.interactionStatus.type === 'declined'"
-                @click="likeTeam(team)"
-                class="btn flex-1 bg-orange-100 dark:bg-orange-700 text-orange-700 dark:text-orange-200"
-              >
-                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Try Again
-              </button>
-              
-              <!-- Default fallback -->
-              <button 
-                v-else
-                @click="likeTeam(team)"
-                class="btn btn-primary flex-1"
-              >
-                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-                Like
               </button>
             </div>
           </div>
@@ -394,158 +296,124 @@
       </div>
     </div>
 
-    <!-- Match Request Modal -->
-    <div v-if="showMatchModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 pb-20 md:pb-4">
-      <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full max-h-[calc(100vh-6rem)] md:max-h-[calc(100vh-2rem)] overflow-y-auto">
-        <div class="p-6">
-          <div class="text-center mb-6">
-            <div class="w-16 h-16 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    <!-- Send Message Modal -->
+    <div v-if="showMessageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
+              <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg md:max-w-xl w-full h-fit max-h-[95vh] flex flex-col shadow-2xl">
+        <!-- Modal Header (Fixed) -->
+        <div class="flex-shrink-0 p-4 md:p-6 border-b border-gray-200 dark:border-slate-600">
+          <div class="text-center">
+            <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
               </svg>
             </div>
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">It's a Match! 🎉</h3>
-            <p class="text-gray-600 dark:text-gray-400">Send a match request to <strong>{{ selectedTeam?.name }}</strong></p>
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Great Choice! 👍</h3>
+            <p class="text-gray-600 dark:text-gray-400">Send a message to <strong>{{ selectedTeam?.name }}</strong></p>
           </div>
+        </div>
 
-          <form @submit.prevent="sendMatchRequest" class="space-y-4">
-            <div>
+        <!-- Modal Body (Scrollable) -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-6">
+          <form @submit.prevent="sendMessage" class="space-y-4">
+            <!-- Your Team Display -->
+            <div v-if="viewingAsTeamStore.selectedTeam" class="bg-gray-50 dark:bg-slate-700 rounded-lg p-4">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Your Team</label>
-              <select v-model="matchRequest.yourTeam" required class="input-field">
-                <option value="">Select your team</option>
-                <option v-for="team in yourTeams" :key="team.id" :value="team.id">
-                  {{ team.name }}
-                </option>
-              </select>
+              <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                  <div v-if="viewingAsTeamStore.selectedTeam.logo_url" 
+                       class="w-8 h-8 rounded-full overflow-hidden border border-gray-200 dark:border-slate-600">
+                    <img :src="viewingAsTeamStore.selectedTeam.logo_url" 
+                         :alt="`${viewingAsTeamStore.selectedTeam.name} logo`" 
+                         class="w-full h-full object-cover">
+                  </div>
+                  <div v-else 
+                       class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-xs font-bold">
+                    {{ viewingAsTeamStore.selectedTeam.name.charAt(0).toUpperCase() }}
+                  </div>
+                </div>
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-gray-100">{{ viewingAsTeamStore.selectedTeam.name }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ viewingAsTeamStore.selectedTeam.sport?.name }} • {{ viewingAsTeamStore.selectedTeam.age_group }}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preferred Dates</label>
-              <div v-if="availableDatesLoading" class="flex items-center justify-center py-8">
-                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-                <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Loading available dates...</span>
-              </div>
-              <div v-else>
-                <!-- No dates available -->
-                <div v-if="combinedAvailableDates.length === 0" class="text-center py-6">
-                  <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                    <svg class="w-8 h-8 mx-auto mb-2 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p class="text-sm text-yellow-800 dark:text-yellow-200 font-medium">No mutual availability found</p>
-                    <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Consider messaging the team about custom availability</p>
-                  </div>
-                </div>
-                
-                <!-- Available dates with detailed info -->
-                <div v-else class="space-y-3 max-h-48 overflow-y-auto">
-                  <div 
-                    v-for="dateInfo in combinedAvailableDates" 
-                    :key="dateInfo.date"
-                    @click="toggleDateSelection(dateInfo)"
-                    class="cursor-pointer border-2 rounded-lg p-3 transition-all hover:shadow-md"
-                    :class="{
-                      'border-primary-500 bg-primary-50 dark:bg-primary-900/20': isDateSelected(`${dateInfo.date}|${dateInfo.formatted}`),
-                      'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600': !isDateSelected(`${dateInfo.date}|${dateInfo.formatted}`)
-                    }"
-                  >
-                    <!-- Date header -->
-                    <div class="flex items-center justify-between mb-2">
-                      <div class="flex items-center space-x-2">
-                        <div 
-                          class="w-4 h-4 rounded border-2 flex items-center justify-center"
-                          :class="{
-                            'border-primary-500 bg-primary-500': isDateSelected(`${dateInfo.date}|${dateInfo.formatted}`),
-                            'border-gray-300 dark:border-gray-600': !isDateSelected(`${dateInfo.date}|${dateInfo.formatted}`)
-                          }"
-                        >
-                          <svg v-if="isDateSelected(`${dateInfo.date}|${dateInfo.formatted}`)" class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                          </svg>
-                        </div>
-                        <span class="font-semibold text-gray-900 dark:text-gray-100">{{ dateInfo.formatted }}</span>
-                      </div>
-                      <span class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
-                        {{ dateInfo.teams.length }} team{{ dateInfo.teams.length > 1 ? 's' : '' }}
-                      </span>
-                    </div>
-                    
-                    <!-- Team availability details -->
-                    <div class="space-y-2">
-                      <div 
-                        v-for="teamAvail in dateInfo.teams" 
-                        :key="`${teamAvail.team_id}-${teamAvail.type}`"
-                        class="flex items-center justify-between text-sm"
-                      >
-                        <div class="flex items-center space-x-2">
-                          <div 
-                            class="w-3 h-3 rounded-full"
-                            :class="getAvailabilityTypeClass(teamAvail.type)"
-                          ></div>
-                          <span class="font-medium text-gray-900 dark:text-gray-100">{{ teamAvail.team_name }}</span>
-                          <span 
-                            class="px-2 py-1 rounded-full text-xs font-medium"
-                            :class="{
-                              'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': teamAvail.type === 'available',
-                              'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200': teamAvail.type === 'travel'
-                            }"
-                          >
-                            {{ teamAvail.type === 'available' ? '🏠 Can Host' : '✈️ Can Travel' }}
-                          </span>
-                        </div>
-                        <div class="text-gray-500 dark:text-gray-400 text-xs">
-                          {{ teamAvail.all_day ? 'All day' : (teamAvail.time ? formatTime(teamAvail.time) : 'All day') }}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <!-- Selected count -->
-                  <div v-if="matchRequest.preferredDates.length > 0" class="text-center pt-2">
-                    <p class="text-sm text-primary-600 dark:text-primary-400">
-                      {{ matchRequest.preferredDates.length }} date{{ matchRequest.preferredDates.length > 1 ? 's' : '' }} selected
-                    </p>
-                  </div>
-                  
-                  <!-- Helper text -->
-                  <p class="text-xs text-gray-500 dark:text-gray-400 text-center">
-                    Select multiple dates to increase your chances of finding a match
-                  </p>
-                </div>
-              </div>
+            <!-- Availability Picker -->
+            <div v-if="viewingAsTeamStore.selectedTeam && selectedTeam">
+              <AvailabilityPicker 
+                :team-ids="[viewingAsTeamStore.selectedTeamId, selectedTeam.id]"
+                v-model="selectedDates"
+              />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message</label>
               <textarea
-                v-model="matchRequest.message"
+                                  v-model="messageData.message"
                 rows="3"
                 class="input-field"
                 placeholder="Tell them why you'd like to play..."
               ></textarea>
+              
+              <!-- Message Preview -->
+              <div v-if="messagePreview" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                Preview: {{ messagePreview }}
+              </div>
             </div>
 
-            <div class="flex space-x-3 pt-4 pb-4">
-              <button 
-                type="button"
-                @click="closeMatchModal"
-                class="btn btn-secondary flex-1"
-              >
-                Skip
-              </button>
-              <button 
-                type="submit"
-                class="btn btn-primary flex-1"
-                :disabled="sending"
-              >
-                <svg v-if="sending" class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                {{ sending ? 'Sending...' : 'Send Request' }}
-              </button>
-            </div>
           </form>
+        </div>
+
+        <!-- Modal Footer (Fixed) -->
+        <div class="flex-shrink-0 p-4 md:p-6 border-t border-gray-200 dark:border-slate-600">
+          <div class="flex space-x-3">
+            <button 
+              type="button"
+              @click="closeMessageModal"
+              class="btn btn-secondary flex-1"
+            >
+              Cancel
+            </button>
+            <button 
+              @click="sendMessage"
+              class="btn btn-primary flex-1"
+              :disabled="sending"
+            >
+              <svg v-if="sending" class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ sending ? 'Sending...' : 'Send Message' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div v-if="showConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6">
+        <div class="text-center">
+          <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Change Your Mind?</h3>
+          <p class="text-gray-600 dark:text-gray-400 mb-6">
+            You previously {{ confirmationData.currentInteraction }} this team. 
+            Are you sure you want to {{ confirmationData.newInteraction }} them instead?
+          </p>
+          <div class="flex space-x-3">
+            <button @click="cancelConfirmation" class="btn btn-secondary flex-1">
+              Cancel
+            </button>
+            <button @click="confirmInteraction" class="btn btn-primary flex-1">
+              Yes, {{ confirmationData.newInteraction }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -553,201 +421,592 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch, onActivated } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useTeamStore } from '../stores/teams.js'
+import { useInteractionsStore } from '../stores/interactions.js'
+import { useMessagesStore } from '../stores/messages.js'
 import { useNotificationStore } from '../stores/notifications.js'
-import { supabase } from '../config/supabase.js'
-import { onBeforeRouteUpdate } from 'vue-router'
+import { useDashboardStore } from '../stores/dashboard.js'
+import { useViewingAsTeamStore } from '../stores/viewingAsTeam.js'
+import { useRouter } from 'vue-router'
+import { calculateDistance } from '../services/geocoding.js'
+import ViewingAsTeamSelector from '../components/ViewingAsTeamSelector.vue'
+import AvailabilityPicker from '../components/AvailabilityPicker.vue'
+import { formatMessageWithDates, createMessagePreview } from '../utils/messageUtils.js'
 
 const authStore = useAuthStore()
 const teamStore = useTeamStore()
+const interactionsStore = useInteractionsStore()
+const messagesStore = useMessagesStore()
 const notificationStore = useNotificationStore()
+const dashboardStore = useDashboardStore()
+const viewingAsTeamStore = useViewingAsTeamStore()
+const router = useRouter()
 
 // State
 const loading = ref(true)
 const teams = ref([])
 const yourTeams = ref([])
-const showFilters = ref(false)
-const showMatchModal = ref(false)
+const matchRequests = ref([])
+const showAdvancedFilters = ref(false)
+const showMessageModal = ref(false)
+const showConfirmation = ref(false)
 const selectedTeam = ref(null)
 const sending = ref(false)
-const availableDatesLoading = ref(false)
-const combinedAvailableDates = ref([])
+const confirmationData = ref({})
 
-// New state for tracking interactions
-const matchRequests = ref([]) // All match requests (sent and received)
-const passedTeams = ref(new Set()) // Teams that have been passed (stored in localStorage)
-
-// Get sports from team store
+// Computed
 const availableSports = computed(() => teamStore.sports.map(sport => sport.name))
 
-// Filters
-const filters = ref({
-  sport: '',
+// Primary Filters (Highly Visible) - simplified since viewingAsTeam replaces sport/matchTeam
+const primaryFilters = ref({
+  showInteracted: true // Default to all teams
+})
+
+// Advanced Filters (Less Visible)
+const advancedFilters = ref({
+  ageGroup: '',
   skillLevel: '',
   distance: '',
   availability: '',
-  ageGroup: '',
-  showInteracted: true // New filter to show/hide already interacted teams
+  interactionFilter: '',
+  teamName: ''
 })
 
-// Match request
-const matchRequest = ref({
-  yourTeam: '',
-  targetTeam: null,
-  preferredDates: [], // Changed to array for multiple selections
+// Message data (simplified since viewingAsTeam determines the requesting team)
+const messageData = ref({
   message: ''
 })
+const selectedDates = ref([])
 
-// Watch for when both teams are selected to load combined availability
-watch(() => [matchRequest.value.yourTeam, selectedTeam.value], async ([yourTeamId, targetTeam]) => {
-  if (yourTeamId && targetTeam && showMatchModal.value) {
-    await loadCombinedAvailability(targetTeam.id, yourTeamId)
-  }
-}, { immediate: false })
-
-// New method to load match requests
-const loadMatchRequests = async () => {
-  try {
-    const result = await teamStore.getMatchRequests('all')
-    if (result.error) throw result.error
-    matchRequests.value = result.data || []
-  } catch (error) {
-    console.error('Error loading match requests:', error)
-  }
+// Debounced team loading for text search
+let debounceTimeout = null
+const debouncedLoadTeams = () => {
+  clearTimeout(debounceTimeout)
+  debounceTimeout = setTimeout(loadTeams, 300)
 }
 
-// New method to load passed teams from localStorage
-const loadPassedTeams = () => {
-  try {
-    const saved = localStorage.getItem(`passedTeams_${authStore.user?.id}`)
-    if (saved) {
-      passedTeams.value = new Set(JSON.parse(saved))
+// Get available sports from user teams
+const getUserTeamSports = () => {
+  return yourTeams.value.map(team => team.sport_id).filter(Boolean)
+}
+
+// Get match team for filtering
+const getMatchTeam = () => {
+  if (!primaryFilters.value.matchTeam) return null
+  return yourTeams.value.find(team => team.id === primaryFilters.value.matchTeam)
+}
+
+// Calculate match reasons between two teams
+const calculateMatchReasons = (theirTeam, userTeam) => {
+  const reasons = []
+
+  // Same sport
+  if (userTeam.sport_id === theirTeam.sport_id) {
+    reasons.push({
+      type: 'sport',
+      icon: '⚽',
+      title: 'Same Sport',
+      description: `Both teams play ${theirTeam.sport?.name || 'the same sport'}`
+    })
+  }
+
+  // Age group compatibility
+  if (userTeam.age_group === theirTeam.age_group) {
+    reasons.push({
+      type: 'age',
+      icon: '👥',
+      title: 'Same Age Group',
+      description: `Both teams are ${userTeam.age_group}`
+    })
+  }
+
+  // Skill level compatibility
+  const skillLevels = ['Beginner', 'Intermediate', 'Advanced', 'Elite']
+  const userSkillIndex = skillLevels.indexOf(userTeam.skill_level)
+  const theirSkillIndex = skillLevels.indexOf(theirTeam.skill_level)
+  const skillDiff = Math.abs(userSkillIndex - theirSkillIndex)
+
+  if (userTeam.skill_level === theirTeam.skill_level) {
+    reasons.push({
+      type: 'skill',
+      icon: '🎯',
+      title: 'Perfect Skill Match',
+      description: `Both teams are ${userTeam.skill_level} level`
+    })
+  } else if (skillDiff === 1) {
+    reasons.push({
+      type: 'skill',
+      icon: '⚖️',
+      title: 'Compatible Skill Level',
+      description: `Close skill levels: ${userTeam.skill_level} vs ${theirTeam.skill_level}`
+    })
+  }
+
+  // Geographic proximity
+  if (userTeam.state === theirTeam.state) {
+    if (userTeam.city === theirTeam.city) {
+      reasons.push({
+        type: 'location',
+        icon: '📍',
+        title: 'Same City',
+        description: `Both teams are in ${userTeam.city}, ${userTeam.state}`
+      })
+    } else {
+      reasons.push({
+        type: 'location',
+        icon: '🗺️',
+        title: 'Same State',
+        description: `Both teams are in ${userTeam.state}`
+      })
     }
-  } catch (error) {
-    console.error('Error loading passed teams:', error)
-    passedTeams.value = new Set()
   }
+
+  return reasons
 }
 
-// New method to save passed teams to localStorage
-const savePassedTeams = () => {
-  try {
-    localStorage.setItem(
-      `passedTeams_${authStore.user?.id}`, 
-      JSON.stringify([...passedTeams.value])
-    )
-  } catch (error) {
-    console.error('Error saving passed teams:', error)
-  }
+// Sort teams according to STATUS_OF_WORK.md specifications
+const sortTeams = (teams) => {
+  const matchTeam = getMatchTeam()
+  
+  return teams.sort((a, b) => {
+    // 1. Sport they have teams in (if other_team_sport = their_team_sport then 1 else 0) descending
+    let aHasSameSport = 0
+    let bHasSameSport = 0
+    
+    if (matchTeam) {
+      aHasSameSport = a.sport_id === matchTeam.sport_id ? 1 : 0
+      bHasSameSport = b.sport_id === matchTeam.sport_id ? 1 : 0
+    } else {
+      // Check against any of user's teams
+      const userSportIds = getUserTeamSports()
+      aHasSameSport = userSportIds.includes(a.sport_id) ? 1 : 0
+      bHasSameSport = userSportIds.includes(b.sport_id) ? 1 : 0
+    }
+    
+    if (bHasSameSport !== aHasSameSport) {
+      return bHasSameSport - aHasSameSport
+    }
+
+    if (matchTeam) {
+      // 2. Absolute age difference between their teams sport
+      const getAgeNumber = (ageGroup) => {
+        if (ageGroup === '18+') return 18
+        return parseInt(ageGroup?.replace('U', '') || '0')
+      }
+      
+      const userAge = getAgeNumber(matchTeam.age_group)
+      const aAge = getAgeNumber(a.age_group)
+      const bAge = getAgeNumber(b.age_group)
+      
+      const aDiff = Math.abs(userAge - aAge)
+      const bDiff = Math.abs(userAge - bAge)
+      
+      if (aDiff !== bDiff) {
+        return aDiff - bDiff
+      }
+
+      // 3. Proximity difference (if coordinates available)
+      if (matchTeam.latitude && matchTeam.longitude) {
+        const aDistance = (a.distance !== undefined) ? a.distance : 
+          (a.latitude && a.longitude) ? 
+            calculateDistance(matchTeam.latitude, matchTeam.longitude, a.latitude, a.longitude) : 
+            999999
+        
+        const bDistance = (b.distance !== undefined) ? b.distance :
+          (b.latitude && b.longitude) ? 
+            calculateDistance(matchTeam.latitude, matchTeam.longitude, b.latitude, b.longitude) : 
+            999999
+        
+        if (aDistance !== bDistance) {
+          return aDistance - bDistance
+        }
+      }
+
+      // 4. Absolute difference in skill
+      const skillLevels = ['Beginner', 'Intermediate', 'Advanced', 'Elite']
+      const userSkillIndex = skillLevels.indexOf(matchTeam.skill_level)
+      const aSkillIndex = skillLevels.indexOf(a.skill_level)
+      const bSkillIndex = skillLevels.indexOf(b.skill_level)
+      
+      const aSkillDiff = Math.abs(userSkillIndex - aSkillIndex)
+      const bSkillDiff = Math.abs(userSkillIndex - bSkillIndex)
+      
+      if (aSkillDiff !== bSkillDiff) {
+        return aSkillDiff - bSkillDiff
+      }
+    }
+
+    // 5. Is disliked (if disliked before 1 else 0) ascending
+    const aDisliked = getUserInteractionType(a) === 'dislike' ? 1 : 0
+    const bDisliked = getUserInteractionType(b) === 'dislike' ? 1 : 0
+    
+    if (aDisliked !== bDisliked) {
+      return aDisliked - bDisliked
+    }
+
+    // Default: most recent teams first
+    return new Date(b.created_at) - new Date(a.created_at)
+  })
 }
 
-// New method to get team interaction status
-const getTeamStatus = (team) => {
+// Get user's interaction type for a team
+const getUserInteractionType = (team) => {
+  if (!viewingAsTeamStore.selectedTeamId) return null
+  
+  // Check against the selected viewing team
+  const interaction = interactionsStore.getTeamInteraction(viewingAsTeamStore.selectedTeamId, team.id)
+  const interactionType = interaction?.interaction_type || null
+  
+  return interactionType
+}
+
+// Get request status for a team
+const getRequestStatus = (team) => {
   const userTeamIds = yourTeams.value.map(t => t.id)
   
-  // Check if team was passed
-  if (passedTeams.value.has(team.id)) {
-    return { type: 'passed', label: 'Passed', icon: '👋', color: 'gray' }
-  }
-  
-  // Check match requests
   const sentRequest = matchRequests.value.find(req => 
     userTeamIds.includes(req.requesting_team_id) && req.target_team_id === team.id
   )
   
-  const receivedRequest = matchRequests.value.find(req => 
-    req.requesting_team_id === team.id && userTeamIds.includes(req.target_team_id)
+  return sentRequest?.status || null
+}
+
+const getRequestStatusText = (status) => {
+  const statusMap = {
+    'pending': 'Messages',
+    'accepted': 'Message Accepted!',
+    'declined': 'Message Declined',
+    'cancelled': 'Message Cancelled'
+  }
+  return statusMap[status] || ''
+}
+
+const getRequestStatusClass = (status) => {
+  const classMap = {
+    'pending': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 cursor-pointer',
+    'accepted': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800 cursor-pointer',
+    'declined': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800 cursor-pointer',
+    'cancelled': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer'
+  }
+  return classMap[status] || ''
+}
+
+// Check if there's an existing conversation with actual messages
+const hasExistingConversation = (team) => {
+  if (!messagesStore.conversations || messagesStore.conversations.length === 0) {
+    return false
+  }
+  
+  return messagesStore.conversations.some(conv => 
+    (conv.requesting_team_id === viewingAsTeamStore.selectedTeamId && conv.target_team_id === team.id) ||
+    (conv.target_team_id === viewingAsTeamStore.selectedTeamId && conv.requesting_team_id === team.id)
   )
-  
-  if (sentRequest) {
-    switch (sentRequest.status) {
-      case 'pending':
-        return { type: 'pending', label: 'Request Sent', icon: '⏳', color: 'blue' }
-      case 'accepted':
-        return { type: 'matched', label: 'Matched!', icon: '🎉', color: 'green' }
-      case 'declined':
-        return { type: 'declined', label: 'Declined', icon: '❌', color: 'red' }
-      default:
-        return { type: 'pending', label: 'Request Sent', icon: '⏳', color: 'blue' }
-    }
-  }
-  
-  if (receivedRequest) {
-    switch (receivedRequest.status) {
-      case 'pending':
-        return { type: 'received', label: 'Request Received', icon: '📨', color: 'purple' }
-      case 'accepted':
-        return { type: 'matched', label: 'Matched!', icon: '🎉', color: 'green' }
-      case 'declined':
-        return { type: 'declined', label: 'You Declined', icon: '❌', color: 'red' }
-      default:
-        return { type: 'received', label: 'Request Received', icon: '📨', color: 'purple' }
-    }
-  }
-  
-  return null // No interaction yet
 }
 
-// Helper function to get interaction status class
-const getInteractionStatusClass = (color) => {
-  const classes = {
-    'gray': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
-    'blue': 'bg-blue-200 text-blue-800 dark:bg-blue-700 dark:text-blue-200',
-    'purple': 'bg-purple-200 text-purple-800 dark:bg-purple-700 dark:text-purple-200',
-    'green': 'bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-200',
-    'red': 'bg-red-200 text-red-800 dark:bg-red-700 dark:text-red-200'
-  }
-  return classes[color] || 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+// Enhanced message button logic - shows for both existing conversations AND liked teams
+const getMessageButtonStatus = (team) => {
+  // First check if there's an existing conversation WITH MESSAGES - this takes precedence
+  if (hasExistingConversation(team)) return 'pending' // Show as "Messages" to navigate to conversation
+  
+  // Check if team is liked (show Send Message button)
+  const interactionType = getUserInteractionType(team)
+  if (interactionType === 'like') return 'liked'
+  
+  // Don't show button for match requests without actual conversations
+  // This prevents showing "Messages" when there are no actual messages
+  
+  return null
 }
 
-// Methods
+const getMessageButtonText = (team) => {
+  const status = getMessageButtonStatus(team)
+  
+  if (status === 'liked') return 'Send Message'
+  if (status === 'pending') return 'Messages' // Only for actual conversations
+  
+  // For any other status, don't show button
+  return ''
+}
+
+const getMessageButtonClass = (team) => {
+  const status = getMessageButtonStatus(team)
+  
+  if (status === 'liked') {
+    return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800 cursor-pointer'
+  }
+  
+  if (status === 'pending') {
+    return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 cursor-pointer'
+  }
+  
+  return ''
+}
+
+const handleMessageButton = async (team) => {
+  const status = getMessageButtonStatus(team)
+  
+  if (status === 'liked') {
+    // Open the send message modal for liked teams (no existing conversation)
+    selectedTeam.value = team
+    showMessageModal.value = true
+  } else if (status === 'pending') {
+    // Navigate to existing conversation with messages
+    await navigateToMessages(team)
+  } else {
+    console.warn(`Unexpected button status: ${status} for team: ${team.name}`)
+    notificationStore.warning('Unexpected State', 'Something went wrong. Please try refreshing the page.')
+  }
+}
+
+// Navigate to messages for a specific team
+const navigateToMessages = async (team) => {
+  try {
+    // Find the conversation for this team
+    await messagesStore.loadConversations()
+    
+    const conversation = messagesStore.sortedConversations.find(conv => 
+      (conv.requesting_team_id === viewingAsTeamStore.selectedTeamId && conv.target_team_id === team.id) ||
+      (conv.target_team_id === viewingAsTeamStore.selectedTeamId && conv.requesting_team_id === team.id)
+    )
+    
+    if (conversation) {
+      // Set the conversation as active and navigate to messages
+      messagesStore.setCurrentConversation(conversation)
+      await router.push('/requests')
+    } else {
+      notificationStore.info('No Messages', `No message history found with ${team.name}`)
+    }
+  } catch (error) {
+    console.error('Error navigating to messages:', error)
+    notificationStore.error('Navigation Error', 'Failed to open messages')
+  }
+}
+
+// Handle like action
+const handleLike = async (team) => {
+  const currentInteraction = getUserInteractionType(team)
+  
+  if (currentInteraction === 'like') {
+    // Already liked, button should be disabled - this shouldn't happen
+    console.warn('Team already liked, button should be disabled!')
+    notificationStore.info('Already Liked', `You've already liked ${team.name}`)
+    return
+  }
+
+  if (currentInteraction === 'dislike') {
+    // Ask for confirmation to switch from dislike to like
+    confirmationData.value = {
+      team,
+      currentInteraction: 'disliked',
+      newInteraction: 'like',
+      action: 'like'
+    }
+    showConfirmation.value = true
+    return
+  }
+
+  // No previous interaction, proceed with like
+  await setInteraction(team, 'like')
+  
+  // Show success notification
+      notificationStore.success('Liked! 👍', `You liked ${team.name}. You can now send a message!`)
+  
+      // After successful like, show message modal after a small delay
+    setTimeout(() => {
+      selectedTeam.value = team
+      showMessageModal.value = true
+    }, 800) // Give time for the like to register and button to update
+}
+
+// Handle dislike action
+const handleDislike = async (team) => {
+  const currentInteraction = getUserInteractionType(team)
+  
+  if (currentInteraction === 'dislike') {
+    // Already disliked, button should be disabled - this shouldn't happen
+    console.warn('Team already disliked, button should be disabled!')
+    notificationStore.info('Already Disliked', `You've already disliked ${team.name}`)
+    return
+  }
+
+  if (currentInteraction === 'like') {
+    // Ask for confirmation to switch from like to dislike
+    confirmationData.value = {
+      team,
+      currentInteraction: 'liked',
+      newInteraction: 'dislike',
+      action: 'dislike'
+    }
+    showConfirmation.value = true
+    return
+  }
+
+  // No previous interaction, proceed with dislike
+  await setInteraction(team, 'dislike')
+  
+  // Show success notification
+  notificationStore.success('Disliked 👎', `You disliked ${team.name}`)
+}
+
+// Set interaction
+const setInteraction = async (team, interactionType) => {
+  if (!viewingAsTeamStore.selectedTeamId) {
+    notificationStore.error('No Team Selected', 'Please select a team to view as first.')
+    return
+  }
+
+  try {
+    loading.value = true
+    await interactionsStore.setTeamInteraction(viewingAsTeamStore.selectedTeamId, team.id, interactionType)
+    
+    // Update team stats locally
+    const stats = interactionsStore.getTeamStats(team.id)
+    team.stats = stats
+
+    // Force Vue reactivity update by updating the teams array
+    const teamIndex = teams.value.findIndex(t => t.id === team.id)
+    if (teamIndex !== -1) {
+      teams.value[teamIndex] = { ...teams.value[teamIndex], stats }
+    }
+  } catch (error) {
+    console.error('Error setting interaction:', error)
+    notificationStore.error('Error', 'Failed to save interaction. Please try again.')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Remove interaction
+const removeInteraction = async (team) => {
+  if (!viewingAsTeamStore.selectedTeamId) {
+    notificationStore.error('No Team Selected', 'Please select a team to view as first.')
+    return
+  }
+
+  await interactionsStore.removeTeamInteraction(viewingAsTeamStore.selectedTeamId, team.id)
+  
+  // Update team stats locally
+  const stats = interactionsStore.getTeamStats(team.id)
+  team.stats = stats
+}
+
+// Confirmation handlers
+const confirmInteraction = async () => {
+  const { team, action } = confirmationData.value
+  
+  try {
+    await setInteraction(team, action)
+    
+    if (action === 'like') {
+      notificationStore.success('Switched to Like! 👍', `You now like ${team.name}`)
+    } else if (action === 'dislike') {
+      notificationStore.success('Switched to Dislike 👎', `You now dislike ${team.name}`)
+    }
+  } catch (error) {
+    notificationStore.error('Error', 'Failed to update interaction')
+  }
+  
+  showConfirmation.value = false
+  confirmationData.value = {}
+}
+
+const cancelConfirmation = () => {
+  showConfirmation.value = false
+  confirmationData.value = {}
+}
+
+// Toggle function for "Show only new" switch
+const toggleNewTeamsOnly = () => {
+  // Invert the showInteracted value
+  // When toggle is ON (checked), we want showInteracted = false (new teams only)
+  // When toggle is OFF (unchecked), we want showInteracted = true (all teams)
+  primaryFilters.value.showInteracted = !primaryFilters.value.showInteracted
+  loadTeams()
+}
+
+// Load teams with filtering and sorting
 const loadTeams = async () => {
   try {
     loading.value = true
     
-    // Get user's team sports to ensure only same sport matches
-    const userTeamSports = yourTeams.value.map(team => team.sport_id).filter(Boolean)
+    // If no team is selected for viewing, show empty state
+    if (!viewingAsTeamStore.selectedTeam) {
+      teams.value = []
+      loading.value = false
+      return
+    }
     
-    const result = await teamStore.searchTeams(filters.value, userTeamSports)
+    // Use the selected viewing team for sport filtering and coordinates
+    const selectedTeam = viewingAsTeamStore.selectedTeam
+    const userTeamSports = [selectedTeam.sport_id]
+    
+    let userTeamCoordinates = null
+    if (selectedTeam.latitude && selectedTeam.longitude) {
+      userTeamCoordinates = {
+        latitude: selectedTeam.latitude,
+        longitude: selectedTeam.longitude
+      }
+    }
+
+    // Build filter object combining advanced filters (no sport filter needed since we use selectedTeam.sport)
+    const combinedFilters = {
+      ...advancedFilters.value,
+      showInteracted: primaryFilters.value.showInteracted
+    }
+
+    const result = await teamStore.searchTeams(combinedFilters, userTeamSports, userTeamCoordinates)
     
     if (result.error) throw result.error
     
-    // Process teams and load their availability data
-    const teamsWithAvailability = await Promise.all(
-      result.data.map(async (team) => {
-        // Get upcoming availability for this team
-        const availabilityResult = await teamStore.getFutureAvailableDates(team.id, 10)
-        const upcomingAvailability = availabilityResult.data || []
+    // Process teams
+    let processedTeams = result.data.map(team => {
+      const stats = interactionsStore.getTeamStats(team.id)
+      
+      return {
+        ...team,
+        stats,
+        matchReasons: calculateMatchReasons(team, selectedTeam)
+      }
+    })
+
+    // Apply interaction filter
+    if (advancedFilters.value.interactionFilter) {
+      processedTeams = processedTeams.filter(team => {
+        const interaction = getUserInteractionType(team)
         
-        // Determine hosting capabilities based on actual availability
-        const availableSlots = upcomingAvailability.filter(slot => slot.type === 'available')
-        const travelSlots = upcomingAvailability.filter(slot => slot.type === 'travel')
-        
-        return {
-          ...team,
-          sport_name: team.sport?.name || 'Unknown',
-          skill_level: team.skill_level,
-          // Use real availability data from database
-          upcoming_availability: upcomingAvailability,
-          // Determine capabilities based on actual availability and venue
-          can_host: team.home_venue && availableSlots.length > 0,
-          can_travel: travelSlots.length > 0,
-          // Calculate match reasons against the user's teams
-          matchReasons: getMatchReasonsForTeam(team, yourTeams.value),
-          // Add interaction status
-          interactionStatus: getTeamStatus(team)
+        switch (advancedFilters.value.interactionFilter) {
+          case 'liked':
+            return interaction === 'like'
+          case 'disliked':
+            return interaction === 'dislike'
+          case 'no_interaction':
+            return !interaction
+          default:
+            return true
         }
       })
-    )
-    
-    teams.value = teamsWithAvailability
-    
-    // Filter out already interacted teams if the filter is off
-    if (!filters.value.showInteracted) {
-      teams.value = teams.value.filter(team => !team.interactionStatus)
     }
+
+    // Filter out interacted teams if showInteracted is false
+    if (!primaryFilters.value.showInteracted) {
+      processedTeams = processedTeams.filter(team => !getUserInteractionType(team))
+    }
+
+    // Apply team name filter
+    if (advancedFilters.value.teamName) {
+      const searchTerm = advancedFilters.value.teamName.toLowerCase()
+      processedTeams = processedTeams.filter(team => 
+        team.name.toLowerCase().includes(searchTerm)
+      )
+    }
+
+    // Sort teams according to specifications
+    teams.value = sortTeams(processedTeams)
+    
+    // Cache team data for dashboard
+    dashboardStore.cacheTeamData(teams.value)
     
   } catch (error) {
     console.error('Error loading teams:', error)
@@ -757,379 +1016,129 @@ const loadTeams = async () => {
   }
 }
 
-const loadYourTeams = async () => {
+// Load user teams and messages
+const loadUserData = async () => {
   try {
     await teamStore.loadUserTeams()
     yourTeams.value = teamStore.activeTeams
+
+    const result = await teamStore.getMatchRequests('all')
+    if (!result.error) {
+      matchRequests.value = result.data || []
+    }
   } catch (error) {
-    console.error('Error loading your teams:', error)
-    notificationStore.error('Loading Error', 'Failed to load your teams.')
+    console.error('Error loading user data:', error)
   }
 }
 
-const passTeam = (team) => {
-  if (!team) return
-  
-  // Add to passed teams
-  passedTeams.value.add(team.id)
-  savePassedTeams()
-  
-  // Update the team's status immediately
-  team.interactionStatus = getTeamStatus(team)
-  
-  notificationStore.success('Team Passed', `You have passed on ${team.name}.`)
-}
-
-const likeTeam = (team) => {
-  if (!team) return
-  
-  selectedTeam.value = team
-  showMatchModal.value = true
-  
-  // Reset availability data when opening modal
-  combinedAvailableDates.value = []
-}
-
-// Helper function to check if a date is selected
-const isDateSelected = (dateKey) => {
-  return matchRequest.value.preferredDates.includes(dateKey)
-}
-
-// Helper function to toggle date selection
-const toggleDateSelection = (dateInfo) => {
-  const dateKey = `${dateInfo.date}|${dateInfo.formatted}`
-  const index = matchRequest.value.preferredDates.indexOf(dateKey)
-  
-  if (index > -1) {
-    // Remove if already selected
-    matchRequest.value.preferredDates.splice(index, 1)
-  } else {
-    // Add if not selected
-    matchRequest.value.preferredDates.push(dateKey)
-  }
-}
-
-// Helper function to get availability type class for color coding
-const getAvailabilityTypeClass = (type) => {
-  const classes = {
-    'available': 'bg-green-500',
-    'travel': 'bg-blue-500',
-    'unavailable': 'bg-red-500'
-  }
-  return classes[type] || 'bg-gray-400'
-}
-
-// Helper function to get availability type icon
-const getAvailabilityTypeIcon = (type) => {
-  const icons = {
-    'available': '🏠',
-    'travel': '✈️'
-  }
-  return icons[type] || '❓'
-}
-
-// Helper function to format time from database TIME format
-const formatTime = (timeString) => {
-  if (!timeString) return null
-  
-  // Handle database TIME format (HH:MM:SS or HH:MM)
-  const [hours, minutes] = timeString.split(':')
-  const hour = parseInt(hours)
-  const minute = parseInt(minutes)
-  
-  const date = new Date()
-  date.setHours(hour, minute, 0, 0)
-  
-  return date.toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
-    minute: '2-digit',
-    hour12: true 
-  })
-}
-
-// Update the closeMatchModal function
-const closeMatchModal = () => {
-  showMatchModal.value = false
-  selectedTeam.value = null
-  matchRequest.value = {
-    yourTeam: '',
-    targetTeam: null,
-    preferredDates: [], // Reset to empty array
-    message: ''
-  }
-}
-
-// Update the sendMatchRequest function to handle array of dates
-const sendMatchRequest = async () => {
+// Send message
+const sendMessage = async () => {
   try {
     sending.value = true
     
-    // Convert selected dates array to a formatted string
-    const selectedDatesString = matchRequest.value.preferredDates
-      .map(dateKey => dateKey.split('|')[1]) // Extract formatted date from key
-      .join(', ')
+    // Store team name before closing modal (to avoid null reference)
+    const targetTeamName = selectedTeam.value?.name || 'the team'
     
+    // Use the selected viewing team as the requesting team
+    if (!viewingAsTeamStore.selectedTeamId) {
+      notificationStore.error('No Team Selected', 'Please select a team to view as first.')
+      return
+    }
+    
+    // Format message with embedded dates
+    const formattedMessage = formatMessageWithDates(messageData.value.message, selectedDates.value)
+
     const result = await teamStore.sendMatchRequest({
-      requestingTeamId: matchRequest.value.yourTeam,
+      requestingTeamId: viewingAsTeamStore.selectedTeamId,
       targetTeamId: selectedTeam.value.id,
-      preferredDates: selectedDatesString || 'Open to discussion',
-      message: matchRequest.value.message
+      preferredDates: 'Open to discussion',
+      message: formattedMessage
     })
     
     if (result.error) throw result.error
     
-    // Reload match requests to update status
-    await loadMatchRequests()
+    // Reload messages
+    await loadUserData()
     
-    // Update the team's interaction status in the current list
-    const teamToUpdate = teams.value.find(t => t.id === selectedTeam.value.id)
-    if (teamToUpdate) {
-      teamToUpdate.interactionStatus = getTeamStatus(teamToUpdate)
-    }
+    closeMessageModal()
     
-    closeMatchModal()
     notificationStore.success(
-      'Match Request Sent! 🎉', 
-      `Your request has been sent to ${selectedTeam.value.name}. They'll receive your message and get back to you soon!`
+              'Message Sent! 🎉',
+        `Your message has been sent to ${targetTeamName}.`
     )
+
+    // Redirect to conversation
+    setTimeout(async () => {
+      await messagesStore.loadConversations()
+      
+      const newConversation = messagesStore.conversations.find(conv => 
+        conv.match_request_id === result.data.id
+      )
+      
+      if (newConversation) {
+        await router.push('/requests')
+        await messagesStore.setCurrentConversation(newConversation)
+      } else {
+        router.push('/requests')
+      }
+    }, 1000)
+    
   } catch (error) {
-    console.error('Error sending match request:', error)
-    notificationStore.error(
-      'Failed to Send Request',
-      'There was an issue sending your match request. Please try again.'
-    )
+    console.error('Error sending message:', error)
+          notificationStore.error('Failed to Send Message', error.message)
   } finally {
     sending.value = false
   }
 }
 
-const resetAndReload = async () => {
-  // Reload all data including match requests
-  await Promise.all([
-    loadMatchRequests(),
-    loadTeams()
-  ])
-  
-  notificationStore.info('Starting Fresh', 'Loading new teams for you to discover!')
-}
-
-// New method to clear passed teams
-const clearPassedTeams = () => {
-  const count = passedTeams.value.size
-  passedTeams.value.clear()
-  savePassedTeams()
-  notificationStore.success('Passed Teams Cleared', `You have cleared ${count} passed teams.`)
-  loadTeams() // Reload teams to reflect the change
-}
-
-const getSkillLevelClass = (level) => {
-  const classes = {
-    'Beginner': 'status-beginner',
-    'Intermediate': 'status-intermediate',
-    'Advanced': 'status-advanced',
-    'Elite': 'status-elite'
+const closeMessageModal = () => {
+  showMessageModal.value = false
+  selectedTeam.value = null
+  messageData.value = {
+    message: ''
   }
-  return classes[level] || 'status-beginner'
+  selectedDates.value = []
 }
 
-const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-}
+// Watch for filter changes
+watch(() => [primaryFilters.value.sport, primaryFilters.value.matchTeam, primaryFilters.value.showInteracted], 
+  () => loadTeams(), 
+  { deep: true }
+)
 
-// Function to load combined availability when modal opens
-const loadCombinedAvailability = async (targetTeamId, yourTeamId) => {
-  try {
-    availableDatesLoading.value = true
-    combinedAvailableDates.value = []
-    
-    const teamIds = [targetTeamId, yourTeamId]
-    const result = await teamStore.getCombinedAvailability(teamIds)
-    
-    if (result.error) throw result.error
-    
-    combinedAvailableDates.value = result.data || []
-  } catch (error) {
-    console.error('Error loading combined availability:', error)
-    notificationStore.error('Loading Error', 'Failed to load availability data.')
-  } finally {
-    availableDatesLoading.value = false
-  }
-}
-
-// Function to calculate match reasons for a team
-const getMatchReasonsForTeam = (team, userTeams) => {
-  if (!userTeams.length) return []
-  
-  // Find the best matching user team (same sport, closest skill level, etc.)
-  const bestMatch = userTeams.find(userTeam => userTeam.sport_id === team.sport_id) || userTeams[0]
-  
-  if (!bestMatch) return []
-  
-  // Use the store's calculateMatchReasons function
-  return teamStore.calculateMatchReasons(bestMatch, team)
-}
-
-// Handle image load errors
-const onImageError = (event) => {
-  // Hide the broken image to show the fallback div
-  event.target.style.display = 'none'
-}
-
-// Add method to refresh all interaction data
-const refreshInteractionData = async () => {
-  await loadMatchRequests()
-  // Update team statuses after loading fresh match requests
-  teams.value.forEach(team => {
-    team.interactionStatus = getTeamStatus(team)
-  })
-}
-
-// Refresh data when component becomes active (user switches back to tab)
-onActivated(async () => {
-  await refreshInteractionData()
-})
-
-// Refresh data when navigating to this route
-onBeforeRouteUpdate(async (to, from, next) => {
-  await refreshInteractionData()
-  next()
-})
-
-// Add window focus listener to refresh when returning to the window
-const handleWindowFocus = async () => {
-  await refreshInteractionData()
-}
-
-// Add visibility change listener to refresh when tab becomes active
-const handleVisibilityChange = async () => {
-  if (!document.hidden) {
-    await refreshInteractionData()
-  }
-}
-
-// Lifecycle
+// Initialize
 onMounted(async () => {
   await Promise.all([
-    loadYourTeams(),
-    loadMatchRequests(),
-    loadTeams()
+    loadUserData(),
+    interactionsStore.initialize(),
+    messagesStore.loadConversations() // Load conversations to check for existing chats
   ])
-  
-  // Load passed teams from localStorage
-  loadPassedTeams()
-  
-  // Add event listeners
-  document.addEventListener('visibilitychange', handleVisibilityChange)
-  window.addEventListener('focus', handleWindowFocus)
+  await loadTeams()
 })
 
-// Cleanup listener when component unmounts
-onUnmounted(() => {
-  document.removeEventListener('visibilitychange', handleVisibilityChange)
-  window.removeEventListener('focus', handleWindowFocus)
+// Message preview with embedded dates
+const messagePreview = computed(() => {
+  if (!messageData.value.message.trim()) return ''
+  return createMessagePreview(messageData.value.message.trim(), selectedDates.value)
 })
+
+// Watch for viewing team changes and reload teams
+watch(() => viewingAsTeamStore.selectedTeamId, () => {
+  loadTeams()
+  messagesStore.loadConversations() // Reload conversations for the new team context
+}, { immediate: false })
 </script>
 
 <style scoped>
-.input-field {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-slate-800 dark:border-slate-700 dark:text-gray-200;
-}
-
-.btn {
-  @apply px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
-}
-
-.btn-primary {
-  @apply bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500 dark:bg-primary-500 dark:hover:bg-primary-600 dark:focus:ring-primary-400;
-}
-
-.btn-secondary {
-  @apply bg-gray-200 hover:bg-gray-300 text-gray-900 focus:ring-gray-500 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-gray-200 dark:focus:ring-slate-500;
-}
-
-.status-badge {
-  @apply px-3 py-1 text-sm rounded-full font-medium;
-}
-
-.status-available {
-  @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200;
-}
-
-.status-travel {
-  @apply bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200;
-}
-
-.status-beginner {
-  @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200;
-}
-
-.status-intermediate {
-  @apply bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200;
-}
-
-.status-advanced {
-  @apply bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200;
-}
-
-.status-elite {
-  @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200;
-}
-
-.status-interaction-badge {
-  @apply flex items-center px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm shadow-lg border;
-}
-
 .team-card {
-  @apply transition-all duration-300 hover:shadow-2xl hover:scale-[1.02];
+  position: relative;
+  transform: scale(1);
+  transition: all 0.3s ease;
 }
 
-.glass {
-  @apply backdrop-blur-sm bg-white/50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700;
+.team-card:hover {
+  transform: scale(1.02);
 }
 
-.fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
 
-.slide-up {
-  animation: slideUp 0.5s ease-out;
-}
-
-.bounce-in {
-  animation: bounceIn 0.6s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes bounceIn {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
 </style> 

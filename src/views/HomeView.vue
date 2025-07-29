@@ -5,18 +5,15 @@
       <!-- Background Pattern -->
       <div class="absolute inset-0 bg-pattern opacity-10"></div>
       
-      <div class="max-w-md mx-auto relative z-10 fade-in">
+      <div class="max-w-lg mx-auto relative z-10 fade-in">
         <!-- Logo/Icon -->
         <div class="mb-8 slide-up">
-          <div class="w-24 h-24 mx-auto bg-white/90 dark:bg-white rounded-2xl flex items-center justify-center shadow-2xl backdrop-blur-sm">
-            <svg class="w-12 h-12 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
+          <div class="w-48 h-48 mx-auto bg-white/90 dark:bg-white rounded-3xl overflow-hidden shadow-2xl backdrop-blur-sm p-3">
+            <img src="@/assets/team_tango_logo.png" alt="TeamTango Logo" class="w-full h-full object-contain">
           </div>
         </div>
 
         <!-- App Title and Description -->
-        <h1 class="text-5xl font-bold mb-6 text-gradient-white tracking-tight bounce-in">TeamTango</h1>
         <p class="text-xl mb-8 opacity-90 leading-relaxed">
           Connect your youth sports teams with others for exciting matchups
         </p>
@@ -52,7 +49,7 @@
       <div class="max-w-6xl mx-auto px-4">
         <h2 class="text-4xl font-bold text-center text-gray-900 dark:text-gray-100 mb-4 fade-in">How It Works</h2>
         <p class="text-center text-gray-600 dark:text-gray-400 mb-16 text-lg max-w-2xl mx-auto">
-          TeamTango makes it easy to connect with other teams and schedule amazing games
+          Connect with other teams and schedule amazing games effortlessly
         </p>
         
         <div class="grid md:grid-cols-3 gap-8">
@@ -60,7 +57,7 @@
           <div class="text-center group">
             <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
               <svg class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
             <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Create Your Team</h3>
@@ -73,7 +70,7 @@
           <div class="text-center group">
             <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
               <svg class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Find Matches</h3>

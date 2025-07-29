@@ -7,10 +7,10 @@ import './assets/main.css'
 // Import views
 import HomeView from './views/HomeView.vue'
 import LoginView from './views/LoginView.vue'
-import DashboardView from './views/DashboardView.vue'
 import TeamManagementView from './views/TeamManagementView.vue'
 import CalendarView from './views/CalendarView.vue'
 import DiscoveryView from './views/DiscoveryView.vue'
+import MessageView from './views/MessageView.vue'
 
 // Create router
 const router = createRouter({
@@ -18,10 +18,14 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'Home', component: HomeView },
     { path: '/login', name: 'Login', component: LoginView },
-    { path: '/dashboard', name: 'Dashboard', component: DashboardView },
     { path: '/teams', name: 'Teams', component: TeamManagementView },
     { path: '/calendar', name: 'Calendar', component: CalendarView },
     { path: '/discovery', name: 'Discovery', component: DiscoveryView },
+    { path: '/messages', name: 'Messages', component: MessageView },
+    // Redirect old dashboard URLs to teams
+    { path: '/dashboard', redirect: '/teams' },
+    // Redirect old requests URLs to messages
+    { path: '/requests', redirect: '/messages' },
   ]
 })
 

@@ -3,10 +3,8 @@
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
       <!-- Logo -->
       <div class="flex justify-center">
-        <div class="w-16 h-16 bg-primary-600 rounded-full flex items-center justify-center">
-          <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
-          </svg>
+        <div class="w-16 h-16 rounded-full overflow-hidden bg-white shadow-lg">
+          <img src="@/assets/team_tango_logo.png" alt="TeamTango Logo" class="w-full h-full object-contain">
         </div>
       </div>
       
@@ -213,7 +211,7 @@ const handleSubmit = async () => {
         form.password = ''
         
         // Redirect to dashboard
-        router.push('/dashboard')
+        router.push('/teams')
       }
     }
 

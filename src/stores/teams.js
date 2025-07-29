@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { supabase } from '../config/supabase.js'
 import { useAuthStore } from './auth.js'
 import { useNotificationStore } from './notifications.js'
+import { geocodeAddress } from '../services/geocoding.js'
 
 export const useTeamStore = defineStore('teams', () => {
   // State
@@ -42,6 +43,50 @@ export const useTeamStore = defineStore('teams', () => {
 
   const getSportByName = (sportName) => {
     return sports.value.find(sport => sport.name === sportName)
+  }
+
+  // Geocoding helper function
+  const geocodeTeamLocation = async (city, state) => {
+    if (!city || !state) {
+      return {
+        latitude: null,
+        longitude: null,
+        geocoded_at: null,
+        geocoding_failed: false
+      }
+    }
+
+    try {
+      const address = `${city}, ${state}`
+      console.log(`Geocoding team location: ${address}`)
+      
+      const result = await geocodeAddress(address)
+      
+      if (result.success && result.latitude && result.longitude) {
+        return {
+          latitude: result.latitude,
+          longitude: result.longitude,
+          geocoded_at: new Date().toISOString(),
+          geocoding_failed: false
+        }
+      } else {
+        console.warn('Geocoding failed:', result.error)
+        return {
+          latitude: null,
+          longitude: null,
+          geocoded_at: null,
+          geocoding_failed: true
+        }
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error)
+      return {
+        latitude: null,
+        longitude: null,
+        geocoded_at: null,
+        geocoding_failed: true
+      }
+    }
   }
 
   // Logo Management
@@ -131,6 +176,9 @@ export const useTeamStore = defineStore('teams', () => {
         throw new Error('Invalid sport selected')
       }
 
+      // Geocode the team location
+      const geocodeResult = await geocodeTeamLocation(teamData.city, teamData.state)
+
       const newTeam = {
         user_id: authStore.user.id,
         name: teamData.name,
@@ -144,7 +192,12 @@ export const useTeamStore = defineStore('teams', () => {
         home_venue: teamData.homeVenue,
         venue_address: teamData.venueAddress,
         description: teamData.description,
-        status: 'Active'
+        status: 'Active',
+        // Add geocoding results
+        latitude: geocodeResult.latitude,
+        longitude: geocodeResult.longitude,
+        geocoded_at: geocodeResult.geocoded_at,
+        geocoding_failed: geocodeResult.geocoding_failed
       }
 
       const { data, error } = await supabase
@@ -226,6 +279,24 @@ export const useTeamStore = defineStore('teams', () => {
         logoUrl = null
       }
 
+      // Check if location has changed and geocode if needed
+      let geocodeResult = {}
+      if (updateData.city || updateData.state) {
+        // Find the existing team to compare location
+        const existingTeam = teams.value.find(t => t.id === teamId)
+        const locationChanged = existingTeam && (
+          (updateData.city && updateData.city !== existingTeam.city) ||
+          (updateData.state && updateData.state !== existingTeam.state)
+        )
+        
+        if (locationChanged || !existingTeam?.latitude) {
+          // Location changed or coordinates missing, geocode again
+          const city = updateData.city || existingTeam?.city
+          const state = updateData.state || existingTeam?.state
+          geocodeResult = await geocodeTeamLocation(city, state)
+        }
+      }
+
       // Map form fields to database fields
       const dbUpdateData = {
         name: updateData.name,
@@ -240,7 +311,9 @@ export const useTeamStore = defineStore('teams', () => {
         venue_address: updateData.venueAddress,
         description: updateData.description,
         logo_url: logoUrl,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        // Add geocoding results if location was updated
+        ...geocodeResult
       }
 
       // Remove undefined values
@@ -282,23 +355,91 @@ export const useTeamStore = defineStore('teams', () => {
     try {
       loading.value = true
 
+      // Soft delete: mark team as inactive instead of deleting
       const { error } = await supabase
         .from('teams')
-        .delete()
+        .update({ active: false })
         .eq('id', teamId)
-        .eq('user_id', authStore.user.id) // Security: only delete own teams
+        .eq('user_id', authStore.user.id) // Security: only modify own teams
 
       if (error) throw error
 
-      // Remove from local teams array
+      // Remove from local teams array (since we only show active teams)
       teams.value = teams.value.filter(team => team.id !== teamId)
 
-      notificationStore.success('Team Deleted', 'Team has been successfully removed.')
+      notificationStore.success('Team Deactivated', 'Team has been deactivated and will no longer appear in searches.')
       return { error: null }
     } catch (error) {
-      console.error('Error deleting team:', error)
-      notificationStore.error('Deletion Failed', error.message)
+      console.error('Error deactivating team:', error)
+      notificationStore.error('Deactivation Failed', error.message)
       return { error }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const reactivateTeam = async (teamId) => {
+    try {
+      loading.value = true
+
+      // Reactivate: mark team as active
+      const { error } = await supabase
+        .from('teams')
+        .update({ active: true })
+        .eq('id', teamId)
+        .eq('user_id', authStore.user.id) // Security: only modify own teams
+
+      if (error) throw error
+
+      notificationStore.success('Team Reactivated', 'Team has been reactivated and will appear in searches again.')
+      return { error: null }
+    } catch (error) {
+      console.error('Error reactivating team:', error)
+      notificationStore.error('Reactivation Failed', error.message)
+      return { error }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const loadInactiveTeams = async () => {
+    try {
+      loading.value = true
+
+      const { data, error } = await supabase
+        .from('teams')
+        .select(`
+          id,
+          name,
+          sport_id,
+          age_group,
+          skill_level,
+          phone,
+          city,
+          state,
+          zip,
+          home_venue,
+          venue_address,
+          description,
+          logo_url,
+          status,
+          user_id,
+          created_at,
+          updated_at,
+          active,
+          sport:sports(*)
+        `)
+        .eq('user_id', authStore.user.id)
+        .eq('active', false) // Only load inactive teams
+        .order('updated_at', { ascending: false })
+
+      if (error) throw error
+
+      return { data: data || [], error: null }
+    } catch (error) {
+      console.error('Error loading inactive teams:', error)
+      notificationStore.error('Loading Failed', 'Failed to load inactive teams.')
+      return { data: null, error }
     } finally {
       loading.value = false
     }
@@ -328,11 +469,13 @@ export const useTeamStore = defineStore('teams', () => {
           user_id,
           created_at,
           updated_at,
+          active,
           sport:sports(*),
           match_requests_made:match_requests!requesting_team_id(count),
           match_requests_received:match_requests!target_team_id(count)
         `)
         .eq('user_id', authStore.user.id)
+        .eq('active', true) // Only load active teams
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -684,7 +827,7 @@ export const useTeamStore = defineStore('teams', () => {
   }
 
   // Discovery/Search Functions
-  const searchTeams = async (filters = {}, userTeamSports = []) => {
+  const searchTeams = async (filters = {}, userTeamSports = [], userTeamCoordinates = null) => {
     try {
       let query = supabase
         .from('teams')
@@ -694,6 +837,7 @@ export const useTeamStore = defineStore('teams', () => {
         `)
         .neq('user_id', authStore.user?.id) // Don't show own teams
         .eq('status', 'Active')
+        .eq('active', true) // Only show active teams
 
       // IMPORTANT: Only show teams from sports that the user's teams play
       // This ensures volleyball teams never see hockey teams, etc.
@@ -724,14 +868,79 @@ export const useTeamStore = defineStore('teams', () => {
         query = query.ilike('state', `%${filters.state}%`)
       }
 
+      // Distance filtering using PostGIS
+      if (filters.distance && userTeamCoordinates && userTeamCoordinates.latitude && userTeamCoordinates.longitude) {
+        const maxDistanceMiles = parseInt(filters.distance)
+        
+        // Use PostGIS to filter by distance
+        // ST_DWithin uses meters, so convert miles to meters
+        const maxDistanceMeters = maxDistanceMiles * 1609.34
+        
+        query = query.not('latitude', 'is', null)
+                    .not('longitude', 'is', null)
+        
+        // Use RPC to call a custom function for distance filtering
+        const { data: distanceFilteredData, error: distanceError } = await supabase
+          .rpc('teams_within_distance', {
+            user_lat: userTeamCoordinates.latitude,
+            user_lng: userTeamCoordinates.longitude,
+            max_distance_miles: maxDistanceMiles,
+            sport_ids: userTeamSports.length > 0 ? userTeamSports : null,
+            user_id_to_exclude: authStore.user?.id,
+            age_group_filter: filters.ageGroup || null,
+            skill_level_filter: filters.skillLevel || null,
+            city_filter: filters.city || null,
+            state_filter: filters.state || null,
+            sport_name_filter: filters.sport || null
+          })
+        
+        if (distanceError) {
+          console.warn('Distance filtering failed, falling back to basic search:', distanceError)
+          // Fall back to basic search without distance
+        } else {
+          return { data: distanceFilteredData || [], error: null }
+        }
+      }
+
       const { data, error } = await query.limit(50)
 
       if (error) throw error
+
+      // If we have user coordinates but no distance filter, add distance info for sorting
+      if (userTeamCoordinates && userTeamCoordinates.latitude && userTeamCoordinates.longitude) {
+        const teamsWithDistance = data.map(team => {
+          if (team.latitude && team.longitude) {
+            // Calculate distance using Haversine formula
+            const distance = calculateDistanceBetweenPoints(
+              userTeamCoordinates.latitude,
+              userTeamCoordinates.longitude,
+              team.latitude,
+              team.longitude
+            )
+            return { ...team, distance }
+          }
+          return { ...team, distance: null }
+        })
+        return { data: teamsWithDistance, error: null }
+      }
+
       return { data, error: null }
     } catch (error) {
       console.error('Error searching teams:', error)
       return { data: null, error }
     }
+  }
+
+  // Helper function to calculate distance between two points (Haversine formula)
+  const calculateDistanceBetweenPoints = (lat1, lng1, lat2, lng2) => {
+    const R = 3959 // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLng = (lng2 - lng1) * Math.PI / 180
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
   }
 
   // Calculate why two teams might be a good match
@@ -906,7 +1115,9 @@ export const useTeamStore = defineStore('teams', () => {
     createTeam,
     updateTeam,
     deleteTeam,
+    reactivateTeam,
     loadUserTeams,
+    loadInactiveTeams,
     getTeamById,
     
     // Availability
@@ -924,6 +1135,70 @@ export const useTeamStore = defineStore('teams', () => {
     
     // Discovery
     searchTeams,
+    
+    // Geocoding utilities
+    geocodeTeamLocation,
+    calculateDistanceBetweenPoints,
+    
+    // Retroactive geocoding for existing teams
+    geocodeExistingTeams: async () => {
+      try {
+        // Find teams without coordinates
+        const { data: teamsToGeocode, error } = await supabase
+          .from('teams')
+          .select('id, city, state, latitude, longitude')
+          .eq('user_id', authStore.user?.id)
+          .or('latitude.is.null,longitude.is.null')
+          .not('geocoding_failed', 'eq', true) // Skip previously failed attempts
+        
+        if (error) throw error
+        
+        if (teamsToGeocode.length === 0) {
+          notificationStore.info('All Set!', 'All your teams already have location data.')
+          return { updated: 0, failed: 0 }
+        }
+        
+        let updated = 0
+        let failed = 0
+        
+        for (const team of teamsToGeocode) {
+          if (team.city && team.state) {
+            const geocodeResult = await geocodeTeamLocation(team.city, team.state)
+            
+            const { error: updateError } = await supabase
+              .from('teams')
+              .update({
+                latitude: geocodeResult.latitude,
+                longitude: geocodeResult.longitude,
+                geocoded_at: geocodeResult.geocoded_at,
+                geocoding_failed: geocodeResult.geocoding_failed
+              })
+              .eq('id', team.id)
+            
+            if (updateError) {
+              console.error(`Failed to update team ${team.id}:`, updateError)
+              failed++
+            } else {
+              updated++
+            }
+            
+            // Rate limiting - wait 1 second between requests
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          }
+        }
+        
+        notificationStore.success(
+          'Location Update Complete',
+          `Updated ${updated} teams${failed > 0 ? `, ${failed} failed` : ''}.`
+        )
+        
+        return { updated, failed }
+      } catch (error) {
+        console.error('Error geocoding existing teams:', error)
+        notificationStore.error('Geocoding Error', error.message)
+        return { updated: 0, failed: 0 }
+      }
+    },
     calculateMatchReasons,
     
     // Utilities

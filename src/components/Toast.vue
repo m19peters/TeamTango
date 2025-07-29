@@ -12,7 +12,7 @@
       <div
         v-for="notification in notificationStore.notifications"
         :key="notification.id"
-        class="max-w-sm w-full"
+        class="max-w-md w-full min-w-[280px]"
       >
         <div
           :class="[
@@ -20,7 +20,7 @@
             getTypeClasses(notification.type)
           ]"
         >
-          <div class="flex items-start">
+          <div class="flex items-start space-x-3">
             <div class="flex-shrink-0">
               <!-- Success Icon -->
               <svg v-if="notification.type === 'success'" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,15 +39,15 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <div class="ml-3 w-0 flex-1">
-              <p v-if="notification.title" class="text-sm font-medium">
+            <div class="flex-1 min-w-0">
+              <p v-if="notification.title" class="text-sm font-medium break-words">
                 {{ notification.title }}
               </p>
-              <p v-if="notification.message" class="mt-1 text-sm opacity-90">
+              <p v-if="notification.message" class="mt-1 text-sm opacity-90 break-words">
                 {{ notification.message }}
               </p>
             </div>
-            <div class="ml-4 flex-shrink-0 flex">
+            <div class="flex-shrink-0">
               <button
                 @click="removeNotification(notification.id)"
                 class="rounded-md inline-flex text-current hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-current transition-opacity"
