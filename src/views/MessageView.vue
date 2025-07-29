@@ -121,7 +121,12 @@ const sendMessage = async () => {
   const otherTeam = getOtherTeam(conversation)
 
   // Format message with embedded dates
+  console.log('sendMessage - Before formatting:', { 
+    message: newMessage.value.trim(), 
+    selectedDates: selectedDates.value 
+  })
   const formattedMessage = formatMessageWithDates(newMessage.value.trim(), selectedDates.value)
+  console.log('sendMessage - After formatting:', formattedMessage)
 
   await messagesStore.sendMessage(
     conversation.match_request_id,
@@ -167,9 +172,17 @@ const getConversationTeamIds = (conversation) => {
 
 // Message preview with embedded dates
 const messagePreview = computed(() => {
+  console.log('messagePreview computed - newMessage:', newMessage.value.trim(), 'selectedDates:', selectedDates.value)
   if (!newMessage.value.trim()) return ''
-  return createMessagePreview(newMessage.value.trim(), selectedDates.value)
+  const preview = createMessagePreview(newMessage.value.trim(), selectedDates.value)
+  console.log('messagePreview result:', preview)
+  return preview
 })
+
+// Watch selectedDates for debugging
+watch(selectedDates, (newValue) => {
+  console.log('MessageView selectedDates changed:', newValue)
+}, { deep: true })
 
 // Watch for viewing team changes and close current conversation
 watch(() => viewingAsTeamStore.selectedTeamId, () => {

@@ -142,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useTeamStore } from '../stores/teams.js'
 import { useNotificationStore } from '../stores/notifications.js'
 
@@ -170,20 +170,19 @@ const notificationStore = useNotificationStore()
 const loading = ref(false)
 const showPicker = ref(false)
 const availableDates = ref([])
-const selectedDates = ref([...props.modelValue])
+const selectedDates = ref([])
 
-// Watch for external changes to modelValue
+// Watch for external changes to modelValue (only when different)
 watch(() => props.modelValue, (newValue) => {
-  // Only update if the values are actually different to prevent loops
   if (JSON.stringify(newValue) !== JSON.stringify(selectedDates.value)) {
     selectedDates.value = [...newValue]
   }
-}, { deep: true })
+})
 
-// Watch for changes to selectedDates and emit (with loop prevention)
+// Watch for changes to selectedDates and emit (only when different)
 watch(selectedDates, (newValue, oldValue) => {
-  // Only emit if the values are actually different to prevent loops
   if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
+    console.log('AvailabilityPicker emit update:modelValue:', newValue)
     emit('update:modelValue', [...newValue])
   }
 }, { deep: true })
@@ -228,19 +227,30 @@ const loadAndShowAvailability = async () => {
 
 const toggleDate = (dateOption) => {
   const date = dateOption.date
-  const index = selectedDates.value.indexOf(date)
+  const currentDates = [...selectedDates.value]
+  const index = currentDates.indexOf(date)
+  
+  console.log('toggleDate called:', { date, currentSelection: currentDates, index })
   
   if (index > -1) {
-    selectedDates.value.splice(index, 1)
+    // Remove date
+    currentDates.splice(index, 1)
   } else {
-    selectedDates.value.push(date)
+    // Add date
+    currentDates.push(date)
   }
+  
+  // Update with new array reference
+  selectedDates.value = currentDates
+  console.log('toggleDate after change:', selectedDates.value)
 }
 
 const removeDate = (date) => {
-  const index = selectedDates.value.indexOf(date)
+  const currentDates = [...selectedDates.value]
+  const index = currentDates.indexOf(date)
   if (index > -1) {
-    selectedDates.value.splice(index, 1)
+    currentDates.splice(index, 1)
+    selectedDates.value = currentDates
   }
 }
 
@@ -284,6 +294,11 @@ const formatDateForPreview = (dateString) => {
     })
   }
 }
+
+// Initialize selectedDates from props on mount
+onMounted(() => {
+  selectedDates.value = [...props.modelValue]
+})
 
 // Simple cleanup when component unmounts (no global listeners)
 // Cleanup will happen automatically when component is destroyed
