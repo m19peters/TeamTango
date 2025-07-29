@@ -13,10 +13,11 @@
       <span>{{ loading ? 'Loading...' : (selectedDates.length > 0 ? `See Availability (${selectedDates.length} selected)` : 'See Availability') }}</span>
     </button>
 
-    <!-- Full Screen Overlay -->
-    <div v-if="showPicker" class="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-[10001] p-4" @click="showPicker = false">
-      <!-- Availability Picker Modal -->
-      <div @click.stop class="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-600 w-full max-w-md max-h-[80vh] flex flex-col">
+    <!-- Full Screen Overlay using Teleport -->
+    <Teleport to="body" :disabled="!document?.body">
+      <div v-if="showPicker" class="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-[10001] p-4" @click="closePicker">
+        <!-- Availability Picker Modal -->
+        <div @click.stop class="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-600 w-full max-w-md max-h-[80vh] flex flex-col">
       <!-- Header -->
       <div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-slate-600">
         <div class="flex items-center space-x-2">
@@ -26,7 +27,7 @@
           <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Select Available Dates</span>
         </div>
         <button
-          @click="showPicker = false"
+          @click="closePicker"
           class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -111,6 +112,7 @@
       </div>
       </div>
     </div>
+    </Teleport>
 
     <!-- Selected Dates Preview -->
     <div v-if="selectedDates.length > 0" class="mt-3">
@@ -142,7 +144,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useTeamStore } from '../stores/teams.js'
 import { useNotificationStore } from '../stores/notifications.js'
 
@@ -183,16 +185,28 @@ watch(selectedDates, (newValue) => {
 }, { deep: true })
 
 // Methods
-const loadAndShowAvailability = async () => {
-  if (props.teamIds.length !== 2) {
-    notificationStore.error('Invalid Teams', 'Need exactly two teams to load availability')
-    return
-  }
-
-  loading.value = true
-  showPicker.value = true
-
+const closePicker = () => {
   try {
+    showPicker.value = false
+    loading.value = false
+  } catch (error) {
+    console.error('Error closing picker:', error)
+    // Force close even if there's an error
+    showPicker.value = false
+    loading.value = false
+  }
+}
+
+const loadAndShowAvailability = async () => {
+  try {
+    if (props.teamIds.length !== 2) {
+      notificationStore.error('Invalid Teams', 'Need exactly two teams to load availability')
+      return
+    }
+
+    loading.value = true
+    showPicker.value = true
+
     // Get combined availability for both teams for the next 60 days
     const endDate = new Date()
     endDate.setDate(endDate.getDate() + 60)
@@ -208,8 +222,8 @@ const loadAndShowAvailability = async () => {
     availableDates.value = result.data || []
   } catch (error) {
     console.error('Error loading availability:', error)
-    notificationStore.error('Failed to Load Availability', error.message)
-    showPicker.value = false
+    notificationStore.error('Failed to Load Availability', error.message || 'An unexpected error occurred')
+    closePicker()
   } finally {
     loading.value = false
   }
@@ -259,24 +273,58 @@ const formatTime = (timeString) => {
 }
 
 const formatDateForPreview = (dateString) => {
-  const date = new Date(dateString)
-  const now = new Date()
-  const tomorrow = new Date(now)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  
-  if (date.toDateString() === now.toDateString()) {
-    return 'Today'
-  } else if (date.toDateString() === tomorrow.toDateString()) {
-    return 'Tomorrow'
-  } else {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-    })
+  try {
+    const date = new Date(dateString)
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    
+    if (date.toDateString() === now.toDateString()) {
+      return 'Today'
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return 'Tomorrow'
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      })
+    }
+  } catch (error) {
+    console.error('Error formatting date:', error)
+    return dateString
   }
 }
+
+// Keyboard event handler
+const handleKeydown = (event) => {
+  if (event.key === 'Escape' && showPicker.value) {
+    closePicker()
+  }
+}
+
+// Mount/unmount lifecycle
+onMounted(() => {
+  try {
+    document.addEventListener('keydown', handleKeydown)
+  } catch (error) {
+    console.error('Error adding event listener:', error)
+  }
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  try {
+    document.removeEventListener('keydown', handleKeydown)
+    showPicker.value = false
+    loading.value = false
+    availableDates.value = []
+    selectedDates.value = []
+  } catch (error) {
+    console.error('Error during cleanup:', error)
+  }
+})
 </script>
 
 <style scoped>
