@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { supabase } from '../config/supabase.js'
 import { useAuthStore } from './auth.js'
 import { useTeamStore } from './teams.js'
 import { useInteractionsStore } from './interactions.js'
 import { useMessagesStore } from './messages.js'
+import { useViewingAsTeamStore } from './viewingAsTeam.js'
 
 export const useDashboardStore = defineStore('dashboard', () => {
   // State
@@ -25,6 +27,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const teamStore = useTeamStore()
   const interactionsStore = useInteractionsStore()
   const messagesStore = useMessagesStore()
+  const viewingAsTeamStore = useViewingAsTeamStore()
 
   // Computed dashboard data
   const dashboardData = computed(() => {
@@ -96,83 +99,180 @@ export const useDashboardStore = defineStore('dashboard', () => {
   })
 
   // Get disliked teams for modal
-  const dislikedTeams = computed(() => {
-    const userTeamIds = teamStore.userTeams.map(team => team.id)
+  const dislikedTeams = ref([])
+  
+  const loadDislikedTeams = async () => {
+    // Only show dislikes for the currently selected viewing team
+    const currentTeamId = viewingAsTeamStore.selectedTeamId
+    if (!currentTeamId) {
+      dislikedTeams.value = []
+      return
+    }
     
     const dislikedInteractions = interactionsStore.interactions
       .filter(interaction => 
-        userTeamIds.includes(interaction.user_team_id) && 
+        interaction.user_team_id === currentTeamId && 
         interaction.interaction_type === 'dislike'
       )
       .sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))
 
-    return dislikedInteractions.map(interaction => {
-      // Try to find team details from discovery cache or create placeholder
-      const targetTeam = teamCache.value[interaction.target_team_id] || {
-        id: interaction.target_team_id,
-        name: 'Team',
+    // Load team details for each disliked team
+    const dislikedPromises = dislikedInteractions.map(async interaction => ({
+      interaction,
+      targetTeam: await getTeamDetails(interaction.target_team_id),
+      userTeam: teamStore.userTeams.find(t => t.id === currentTeamId)
+    }))
+
+    dislikedTeams.value = await Promise.all(dislikedPromises)
+  }
+
+  // Helper function to get team details
+  const getTeamDetails = async (teamId) => {
+    // Check cache first
+    if (teamCache.value[teamId]) {
+      return teamCache.value[teamId]
+    }
+
+    // Check if it's one of user's teams
+    const userTeam = teamStore.userTeams.find(t => t.id === teamId)
+    if (userTeam) {
+      teamCache.value[teamId] = userTeam
+      return userTeam
+    }
+
+    // Fetch from database
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .select(`
+          id, 
+          name, 
+          skill_level, 
+          city, 
+          state, 
+          logo_url,
+          sport:sports(name)
+        `)
+        .eq('id', teamId)
+        .eq('active', true)
+        .single()
+
+      if (error || !data) {
+        // Return placeholder if team not found
+        return {
+          id: teamId,
+          name: 'Unknown Team',
+          sport: { name: 'Unknown' },
+          skill_level: 'Unknown',
+          city: 'Unknown',
+          state: 'Unknown'
+        }
+      }
+
+      // Ensure sport is properly formatted
+      if (data.sport && data.sport.name) {
+        // Sport is already in correct format from JOIN
+      } else {
+        data.sport = { name: 'Unknown' }
+      }
+
+      // Cache the result
+      teamCache.value[teamId] = data
+      return data
+    } catch (error) {
+      console.error('Error fetching team details:', error)
+      return {
+        id: teamId,
+        name: 'Unknown Team',
         sport: { name: 'Unknown' },
         skill_level: 'Unknown',
         city: 'Unknown',
         state: 'Unknown'
       }
-
-      return {
-        interaction,
-        targetTeam,
-        userTeam: teamStore.userTeams.find(t => t.id === interaction.user_team_id)
-      }
-    })
-  })
+    }
+  }
 
   // Get liked teams for modal (teams user liked + teams that liked user)
-  const likedTeams = computed(() => {
-    const userTeamIds = teamStore.userTeams.map(team => team.id)
+  const likedTeams = ref([])
+  
+  const loadLikedTeams = async () => {
+    // Only show likes for the currently selected viewing team
+    const currentTeamId = viewingAsTeamStore.selectedTeamId
+    if (!currentTeamId) {
+      likedTeams.value = []
+      return
+    }
+
+    // Find likes where current team liked others
+    const outgoingLikes = interactionsStore.interactions
+      .filter(interaction => 
+        interaction.user_team_id === currentTeamId && 
+        interaction.interaction_type === 'like'
+      )
     
-    // Teams the user liked
-    const userLiked = interactionsStore.interactions
+    // Find likes where others liked current team  
+    const incomingLikes = interactionsStore.interactions
       .filter(interaction => 
-        userTeamIds.includes(interaction.user_team_id) && 
+        interaction.target_team_id === currentTeamId && 
         interaction.interaction_type === 'like'
       )
-      .map(interaction => ({
-        interaction,
-        targetTeam: teamCache.value[interaction.target_team_id] || {
-          id: interaction.target_team_id,
-          name: 'Team',
-          sport: { name: 'Unknown' },
-          skill_level: 'Unknown',
-          city: 'Unknown',
-          state: 'Unknown'
-        },
-        userTeam: teamStore.userTeams.find(t => t.id === interaction.user_team_id),
-        direction: 'outgoing' // User liked this team
-      }))
 
-    // Teams that liked the user
-    const likedUser = interactionsStore.interactions
-      .filter(interaction => 
-        userTeamIds.includes(interaction.target_team_id) && 
-        interaction.interaction_type === 'like'
-      )
-      .map(interaction => ({
+    // Map to get unique relationships by other team
+    const relationships = new Map()
+    
+    // Process outgoing likes (current team liked other teams)
+    for (const interaction of outgoingLikes) {
+      const otherTeamId = interaction.target_team_id
+      const otherTeam = await getTeamDetails(otherTeamId)
+      
+      relationships.set(otherTeamId, {
+        otherTeam,
+        currentTeamId,
+        direction: 'outgoing',
         interaction,
-        targetTeam: teamCache.value[interaction.user_team_id] || {
-          id: interaction.user_team_id,
-          name: 'Team',
-          sport: { name: 'Unknown' },
-          skill_level: 'Unknown',
-          city: 'Unknown',
-          state: 'Unknown'
-        },
-        userTeam: teamStore.userTeams.find(t => t.id === interaction.target_team_id),
-        direction: 'incoming' // This team liked user
-      }))
+        otherTeamId
+      })
+    }
+    
+    // Process incoming likes (other teams liked current team)
+    for (const interaction of incomingLikes) {
+      const otherTeamId = interaction.user_team_id
+      const otherTeam = await getTeamDetails(otherTeamId)
+      
+      if (relationships.has(otherTeamId)) {
+        // Already exists as outgoing, make it mutual
+        const existing = relationships.get(otherTeamId)
+        existing.direction = 'mutual'
+        existing.incomingInteraction = interaction
+      } else {
+        // New incoming-only relationship
+        relationships.set(otherTeamId, {
+          otherTeam,
+          currentTeamId,
+          direction: 'incoming', 
+          interaction,
+          otherTeamId
+        })
+      }
+    }
 
-    return [...userLiked, ...likedUser]
-      .sort((a, b) => new Date(b.interaction.updated_at || b.interaction.created_at) - 
-                      new Date(a.interaction.updated_at || a.interaction.created_at))
-  })
+    // Convert to array and format for template
+    likedTeams.value = Array.from(relationships.values())
+      .map(rel => ({
+        interaction: rel.interaction,
+        targetTeam: rel.otherTeam,
+        userTeam: teamStore.userTeams.find(t => t.id === currentTeamId),
+        direction: rel.direction,
+        mutualInteraction: rel.incomingInteraction
+      }))
+      .sort((a, b) => {
+        const aTime = new Date(a.interaction.updated_at || a.interaction.created_at)
+        const bTime = new Date(b.interaction.updated_at || b.interaction.created_at)
+        return bTime - aTime
+      })
+
+
+  }
 
   // Actions
   const markLikesAsViewed = () => {
@@ -213,14 +313,16 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   // Modal actions
-  const openDislikedModal = () => {
+  const openDislikedModal = async () => {
     showDislikedModal.value = true
     markDislikesAsViewed()
+    await loadDislikedTeams()
   }
 
-  const openLikedModal = () => {
+  const openLikedModal = async () => {
     showLikedModal.value = true
     markLikesAsViewed()
+    await loadLikedTeams()
   }
 
   const openRequestsModal = () => {
@@ -296,6 +398,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     closeAllModals,
     removeDislike,
     toggleLike,
+    loadLikedTeams,
+    loadDislikedTeams,
     cacheTeamData,
     initialize,
     clearDashboard

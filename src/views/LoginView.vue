@@ -137,11 +137,12 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { useNotificationStore } from '../stores/notifications.js'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 
@@ -210,8 +211,23 @@ const handleSubmit = async () => {
         form.email = ''
         form.password = ''
         
-        // Redirect to dashboard
-        router.push('/teams')
+        // Redirect to intended page or default to teams
+        let redirectPath = route.query.redirect || '/teams'
+        
+        // Decode the redirect path safely
+        try {
+          redirectPath = decodeURIComponent(redirectPath)
+        } catch (e) {
+          // If redirect URL is malformed, default to teams
+          redirectPath = '/teams'
+        }
+        
+        // Prevent infinite redirect loops by not redirecting to login
+        if (redirectPath === '/login' || redirectPath.startsWith('/login?')) {
+          redirectPath = '/teams'
+        }
+        
+        router.push(redirectPath)
       }
     }
 

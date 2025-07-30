@@ -534,6 +534,10 @@ export const useTeamStore = defineStore('teams', () => {
         }
         insertData.time = availabilityData.time
         insertData.duration = parseFloat(availabilityData.duration) || 2
+      } else {
+        // Explicitly set time and duration to null for travel and other types
+        insertData.time = null
+        insertData.duration = null
       }
 
       const { data, error } = await supabase
@@ -651,6 +655,40 @@ export const useTeamStore = defineStore('teams', () => {
   // Match Request Management
   const sendMatchRequest = async (requestData) => {
     try {
+      // Check if a match request already exists between these teams (in either direction)
+      const { data: existingRequests, error: checkError } = await supabase
+        .from('match_requests')
+        .select('id')
+        .or(`and(requesting_team_id.eq.${requestData.requestingTeamId},target_team_id.eq.${requestData.targetTeamId}),and(requesting_team_id.eq.${requestData.targetTeamId},target_team_id.eq.${requestData.requestingTeamId})`)
+
+      if (checkError) throw checkError
+
+      if (existingRequests && existingRequests.length > 0) {
+        // Return the existing match request instead of creating a new one
+        const { data: existingRequest, error: fetchError } = await supabase
+          .from('match_requests')
+          .select(`
+            *,
+            requesting_team:teams!requesting_team_id(*),
+            target_team:teams!target_team_id(*)
+          `)
+          .eq('id', existingRequests[0].id)
+          .single()
+
+        if (fetchError) throw fetchError
+
+        // Return the existing request with a flag to indicate it's existing
+        return { 
+          data: existingRequest, 
+          error: null, 
+          isExisting: true,
+          newMessage: requestData.message,
+          sendingTeamId: requestData.requestingTeamId,
+          receivingTeamId: requestData.targetTeamId
+        }
+      }
+
+      // No existing request found, create a new one
       const { data, error } = await supabase
         .from('match_requests')
         .insert([{

@@ -92,13 +92,15 @@
                       'text-xs p-1 rounded truncate cursor-pointer flex items-center justify-between group',
                       getEventTypeClass(event.type)
                     ]"
+                    @click="handleEventClick(event)"
                   >
-                    <span @click="editEvent(event)" class="flex-1 truncate">
+                    <span class="flex-1 truncate">
                       {{ event.title || event.type }}
                     </span>
+                    <!-- Desktop-only delete button -->
                     <button 
                       @click.stop="deleteEvent(event)"
-                      class="opacity-0 group-hover:opacity-100 ml-1 text-red-600 hover:text-red-800 transition-opacity"
+                      class="hidden md:block opacity-0 group-hover:opacity-100 ml-1 text-red-600 hover:text-red-800 transition-opacity"
                       title="Delete"
                     >
                       ×
@@ -120,14 +122,14 @@
       <!-- Upcoming Events -->
       <div class="bg-white dark:bg-slate-800 rounded-lg shadow border border-gray-200 dark:border-slate-700">
         <div class="p-4 border-b border-gray-200 dark:border-slate-700">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Upcoming Events</h3>
+          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Upcoming Availability</h3>
         </div>
         <div class="p-4">
           <div v-if="upcomingEvents.length === 0" class="text-center py-8">
             <svg class="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <p class="text-gray-500 dark:text-gray-400">No upcoming events</p>
+            <p class="text-gray-500 dark:text-gray-400">No upcoming availability</p>
             <button 
               @click="openAddAvailabilityModal"
               class="btn btn-primary mt-4"
@@ -147,7 +149,7 @@
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   {{ event.formattedDate }}
                   <span v-if="event.time && event.time !== 'No time specified'"> at {{ event.time }}</span>
-                  <span v-if="event.duration && event.time !== 'All Day'"> ({{ event.duration }}h)</span>
+                  <span v-if="event.duration && event.time !== 'All Day' && event.type !== 'travel'"> ({{ event.duration }}h)</span>
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-500">{{ event.team }}</p>
               </div>
@@ -449,6 +451,101 @@
         </div>
       </div>
     </div>
+
+    <!-- Event Detail Modal (Mobile-First) -->
+    <div v-if="showEventDetailModal && selectedEventForDetail" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
+      <div class="bg-white dark:bg-slate-800 rounded-lg max-w-sm w-full shadow-2xl">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Event Details</h3>
+            <button 
+              @click="closeEventDetailModal"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="space-y-4">
+            <!-- Event Type -->
+            <div>
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Type</p>
+              <p class="text-lg text-gray-900 dark:text-gray-100">
+                {{ selectedEventForDetail.type === 'available' ? 'Available to Host' : 
+                   selectedEventForDetail.type === 'travel' ? 'Available to Travel' : 'Unavailable' }}
+              </p>
+            </div>
+
+            <!-- Date -->
+            <div>
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Date</p>
+              <p class="text-lg text-gray-900 dark:text-gray-100">
+                {{ new Date(selectedEventForDetail.date).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                }) }}
+              </p>
+            </div>
+
+            <!-- Time -->
+            <div v-if="selectedEventForDetail.time">
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Time</p>
+              <p class="text-lg text-gray-900 dark:text-gray-100">
+                {{ new Date('2000-01-01T' + selectedEventForDetail.time).toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit'
+                }) }}
+                <span v-if="selectedEventForDetail.duration && selectedEventForDetail.type !== 'travel'">
+                  ({{ selectedEventForDetail.duration }}h)
+                </span>
+              </p>
+            </div>
+            <div v-else-if="selectedEventForDetail.all_day">
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Time</p>
+              <p class="text-lg text-gray-900 dark:text-gray-100">All Day</p>
+            </div>
+
+            <!-- Notes -->
+            <div v-if="selectedEventForDetail.notes">
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Notes</p>
+              <p class="text-gray-900 dark:text-gray-100">{{ selectedEventForDetail.notes }}</p>
+            </div>
+
+            <!-- Team -->
+            <div>
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Team</p>
+              <p class="text-lg text-gray-900 dark:text-gray-100">{{ selectedEventForDetail.team }}</p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex space-x-3 pt-6">
+            <button 
+              @click="closeEventDetailModal"
+              class="btn btn-secondary flex-1"
+            >
+              Close
+            </button>
+            <button 
+              @click="editEvent(selectedEventForDetail); closeEventDetailModal()"
+              class="btn btn-primary flex-1"
+            >
+              Edit
+            </button>
+            <button 
+              @click="deleteEvent(selectedEventForDetail)"
+              class="btn text-sm px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800 rounded-lg font-medium transition-colors"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -465,6 +562,8 @@ const viewingAsTeamStore = useViewingAsTeamStore()
 
 const showAddAvailabilityModal = ref(false)
 const editingEvent = ref(null)
+const showEventDetailModal = ref(false)
+const selectedEventForDetail = ref(null)
 const currentDate = ref(new Date())
 const events = ref([])
 const loading = ref(false)
@@ -534,9 +633,16 @@ const calendarDays = computed(() => {
 const filteredEvents = computed(() => events.value)
 
 const upcomingEvents = computed(() => {
-  const now = new Date()
+  // Get today's date at midnight for proper comparison
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
   return events.value
-    .filter(event => new Date(event.date) >= now)
+    .filter(event => {
+      const eventDate = new Date(event.date)
+      eventDate.setHours(0, 0, 0, 0)
+      return eventDate >= today
+    })
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .map(event => ({
       ...event,
@@ -742,10 +848,34 @@ const deleteEvent = async (event) => {
       if (result.error) throw result.error
       
       events.value = events.value.filter(e => e.id !== event.id)
+      
+      // Close event detail modal if open
+      if (showEventDetailModal.value && selectedEventForDetail.value?.id === event.id) {
+        closeEventDetailModal()
+      }
     } catch (error) {
       console.error('Error deleting event:', error)
       notificationStore.error('Delete Failed', error.message)
     }
+  }
+}
+
+const openEventDetailModal = (event) => {
+  selectedEventForDetail.value = event
+  showEventDetailModal.value = true
+}
+
+const closeEventDetailModal = () => {
+  showEventDetailModal.value = false
+  selectedEventForDetail.value = null
+}
+
+const handleEventClick = (event) => {
+  // On mobile, open detail modal; on desktop, edit directly
+  if (window.innerWidth < 768) { // md breakpoint
+    openEventDetailModal(event)
+  } else {
+    editEvent(event)
   }
 }
 
@@ -778,8 +908,6 @@ const saveEvent = async () => {
 
     // Get all dates to create availability for
     const datesToCreate = selectedDatesPreview.value
-    console.log('Dates to create:', datesToCreate)
-    console.log('Form data:', { ...eventForm })
 
     if (editingEvent.value) {
       // Update existing availability (single date only)
@@ -804,6 +932,9 @@ const saveEvent = async () => {
           team: getTeamName(eventForm.teamId),
           title: getEventTitle(eventForm.type, getTeamName(eventForm.teamId))
         }
+        
+        // Force reactivity update by triggering a new array reference
+        events.value = [...events.value]
       }
     } else {
       // Create new availability entries (one for each date)
@@ -813,7 +944,6 @@ const saveEvent = async () => {
       let lastError = null
       
       for (const date of datesToCreate) {
-        console.log('Creating availability for date:', date)
         const formData = {
           teamId: eventForm.teamId,
           type: eventForm.type,
@@ -823,8 +953,6 @@ const saveEvent = async () => {
           duration: eventForm.allDay ? null : eventForm.duration,
           notes: eventForm.notes
         }
-
-        console.log('Sending form data:', formData)
         // Suppress individual notifications for batch operations
         const suppressNotification = datesToCreate.length > 1
         const result = await teamStore.addTeamAvailability(eventForm.teamId, formData, suppressNotification)
@@ -836,8 +964,6 @@ const saveEvent = async () => {
           // Continue with other dates instead of failing completely
           continue
         }
-        
-        console.log('Created availability:', result.data)
         const newEvent = {
           ...result.data,
           team: getTeamName(eventForm.teamId),
@@ -847,9 +973,11 @@ const saveEvent = async () => {
         successCount++
       }
       
-      console.log('Created', createdEvents.length, 'events')
       // Add all new events to the local array
       events.value.push(...createdEvents)
+      
+      // Force reactivity update by triggering a new array reference
+      events.value = [...events.value]
       
       // Show consolidated notification for batch operations
       if (datesToCreate.length > 1) {

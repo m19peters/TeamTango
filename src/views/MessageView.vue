@@ -364,49 +364,102 @@ watch(() => viewingAsTeamStore.selectedTeamId, () => {
                    class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-slate-900 min-h-0">
                 
                 <!-- Initial Message -->
-                <div v-if="currentConversation.initial_message" class="text-center">
-                  <div class="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-4 py-2 rounded-lg text-sm">
-                    <div class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Initial Message:</div>
-                    <MessageDisplay :message="currentConversation.initial_message" variant="default" />
+                <div v-if="currentConversation.initial_message" class="flex"
+                     :class="currentConversation.requesting_team_id === getUserTeamId(currentConversation) ? 'justify-end' : 'justify-start'">
+                  <div class="max-w-xs lg:max-w-md">
+                                         <!-- Sender Label -->
+                     <div class="text-xs text-gray-500 dark:text-gray-400 mb-1 px-1 flex items-center"
+                          :class="currentConversation.requesting_team_id === getUserTeamId(currentConversation) ? 'justify-end' : 'justify-start'">
+                       <svg class="w-3 h-3 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.962 8.962 0 01-4.5-1.207L3 21l2.207-5.5A8.962 8.962 0 013 12c0-4.418 3.582-8 8-8s8 3.582 8 8z" />
+                       </svg>
+                       {{ currentConversation.requesting_team_id === getUserTeamId(currentConversation) ? 'You' : currentConversation.requesting_team_name }}
+                       <span class="opacity-75 ml-1">started this conversation</span>
+                     </div>
+                    
+                    <!-- Message Bubble -->
+                    <div class="px-4 py-2 rounded-lg border-2"
+                         :class="currentConversation.requesting_team_id === getUserTeamId(currentConversation) 
+                           ? 'bg-blue-500 text-white rounded-br-sm border-blue-500' 
+                           : 'bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-slate-600 rounded-bl-sm'">
+                      
+                      <MessageDisplay 
+                        :message="currentConversation.initial_message" 
+                        :variant="currentConversation.requesting_team_id === getUserTeamId(currentConversation) ? 'sent' : 'received'"
+                      />
+                      
+                      <!-- Timestamp -->
+                      <div class="flex items-center justify-end mt-1">
+                        <span class="text-xs opacity-75">
+                          {{ formatTime(currentConversation.created_at) }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+                </div>
+
+                <!-- Separator after initial message -->
+                <div v-if="currentConversation.initial_message && currentMessages.length > 0" class="flex items-center my-4">
+                  <div class="flex-1 border-t border-gray-200 dark:border-slate-600"></div>
+                  <div class="px-3 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-900">
+                    Conversation
+                  </div>
+                  <div class="flex-1 border-t border-gray-200 dark:border-slate-600"></div>
                 </div>
 
                 <!-- Messages -->
                 <div v-for="message in currentMessages" :key="message.id" class="flex"
                      :class="message.sender_team_id === getUserTeamId(currentConversation) ? 'justify-end' : 'justify-start'">
                   
-                  <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg"
-                       :class="message.sender_team_id === getUserTeamId(currentConversation) 
-                         ? 'bg-blue-500 text-white rounded-br-sm' 
-                         : 'bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-slate-600 rounded-bl-sm'">
+                  <div class="max-w-xs lg:max-w-md">
+                    <!-- Sender Label -->
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mb-1 px-1"
+                         :class="message.sender_team_id === getUserTeamId(currentConversation) ? 'text-right' : 'text-left'">
+                      {{ message.sender_team_id === getUserTeamId(currentConversation) ? 'You' : getOtherTeam(currentConversation).name }}
+                    </div>
                     
-                    <MessageDisplay 
-                      :message="message.message" 
-                      :variant="message.sender_team_id === getUserTeamId(currentConversation) ? 'sent' : 'received'"
-                    />
-                    
-                    <div class="flex items-center justify-end mt-1 space-x-1">
-                      <span class="text-xs opacity-75">
-                        {{ formatMessageTime(message.sent_at) }}
-                      </span>
-                      <svg v-if="message.sender_team_id === getUserTeamId(currentConversation) && message.is_read" 
-                           class="w-3 h-3 opacity-75" 
-                           fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                      </svg>
+                    <!-- Message Bubble -->
+                    <div class="px-4 py-2 rounded-lg"
+                         :class="message.sender_team_id === getUserTeamId(currentConversation) 
+                           ? 'bg-blue-500 text-white rounded-br-sm' 
+                           : 'bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-slate-600 rounded-bl-sm'">
+                      
+                      <MessageDisplay 
+                        :message="message.message" 
+                        :variant="message.sender_team_id === getUserTeamId(currentConversation) ? 'sent' : 'received'"
+                      />
+                      
+                      <div class="flex items-center justify-end mt-1 space-x-1">
+                        <span class="text-xs opacity-75">
+                          {{ formatMessageTime(message.sent_at) }}
+                        </span>
+                        <svg v-if="message.sender_team_id === getUserTeamId(currentConversation) && message.is_read" 
+                             class="w-3 h-3 opacity-75" 
+                             fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <!-- Loading indicator for new messages -->
                 <div v-if="messagesStore.sendingMessage" class="flex justify-end">
-                  <div class="max-w-xs lg:max-w-md px-4 py-2 bg-blue-400 text-white rounded-lg rounded-br-sm opacity-75">
-                    <div class="flex items-center space-x-2">
-                      <div class="animate-pulse">Sending...</div>
-                      <div class="flex space-x-1">
-                        <div class="w-1 h-1 bg-white rounded-full animate-bounce"></div>
-                        <div class="w-1 h-1 bg-white rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                        <div class="w-1 h-1 bg-white rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                  <div class="max-w-xs lg:max-w-md">
+                    <!-- Sender Label -->
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mb-1 px-1 text-right">
+                      You
+                    </div>
+                    
+                    <!-- Message Bubble -->
+                    <div class="px-4 py-2 bg-blue-400 text-white rounded-lg rounded-br-sm opacity-75">
+                      <div class="flex items-center space-x-2">
+                        <div class="animate-pulse">Sending...</div>
+                        <div class="flex space-x-1">
+                          <div class="w-1 h-1 bg-white rounded-full animate-bounce"></div>
+                          <div class="w-1 h-1 bg-white rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                          <div class="w-1 h-1 bg-white rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        </div>
                       </div>
                     </div>
                   </div>

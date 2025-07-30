@@ -1057,29 +1057,46 @@ const sendMessage = async () => {
     
     if (result.error) throw result.error
     
+    if (result.isExisting) {
+      // Handle existing conversation - send message to existing match request
+      const messageResult = await messagesStore.sendMessage(
+        result.data.id,
+        result.sendingTeamId,
+        result.receivingTeamId,
+        result.newMessage
+      )
+      
+      if (messageResult.error) throw messageResult.error
+      
+      notificationStore.success(
+        'Message Sent! 🎉',
+        `Your message has been added to the existing conversation with ${targetTeamName}.`
+      )
+    } else {
+      notificationStore.success(
+        'Message Sent! 🎉',
+        `Your message has been sent to ${targetTeamName}.`
+      )
+    }
+    
     // Reload messages
     await loadUserData()
     
     closeMessageModal()
-    
-    notificationStore.success(
-              'Message Sent! 🎉',
-        `Your message has been sent to ${targetTeamName}.`
-    )
 
     // Redirect to conversation
     setTimeout(async () => {
       await messagesStore.loadConversations()
       
-      const newConversation = messagesStore.conversations.find(conv => 
+      const conversation = messagesStore.conversations.find(conv => 
         conv.match_request_id === result.data.id
       )
       
-      if (newConversation) {
-        await router.push('/requests')
-        await messagesStore.setCurrentConversation(newConversation)
+      if (conversation) {
+        await router.push('/messages')
+        await messagesStore.setCurrentConversation(conversation)
       } else {
-        router.push('/requests')
+        router.push('/messages')
       }
     }, 1000)
     

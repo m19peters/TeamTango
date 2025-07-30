@@ -721,7 +721,10 @@
                   <div class="flex-1">
                     <div class="flex items-center space-x-2">
                       <span class="font-medium text-gray-900 dark:text-gray-100">{{ item.targetTeam.name }}</span>
-                      <span v-if="item.direction === 'incoming'" class="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full">
+                      <span v-if="item.direction === 'mutual'" class="text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 px-2 py-1 rounded-full">
+                        Mutual Like
+                      </span>
+                      <span v-else-if="item.direction === 'incoming'" class="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full">
                         Liked You
                       </span>
                       <span v-else class="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-1 rounded-full">
@@ -747,7 +750,7 @@
                 <svg v-else class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                {{ item.direction === 'incoming' ? 'Like Back' : 'Unlike' }}
+                {{ item.direction === 'incoming' ? 'Like Back' : (item.direction === 'mutual' ? 'Unlike' : 'Unlike') }}
               </button>
             </div>
           </div>
@@ -1233,14 +1236,14 @@ const getDashboardData = (team) => {
 }
 
 // Modal actions
-const openDislikedModal = (team) => {
+const openDislikedModal = async (team) => {
   viewingAsTeamStore.setViewingAsTeam(team.id)
-  dashboardStore.openDislikedModal()
+  await dashboardStore.openDislikedModal()
 }
 
-const openLikedModal = (team) => {
+const openLikedModal = async (team) => {
   viewingAsTeamStore.setViewingAsTeam(team.id)
-  dashboardStore.openLikedModal()
+  await dashboardStore.openLikedModal()
 }
 
 const openRequestsModal = (team) => {
