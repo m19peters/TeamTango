@@ -5,7 +5,47 @@
   "installCommand": "npm install",
   "rewrites": [
     {
-      "source": "/((?!assets/|.*\\.(png|ico|css|js|svg|jpg|jpeg|gif|webp|woff|woff2|ttf|eot)).*)",
+      "source": "/teams/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/teams",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/calendar/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/calendar",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/discovery/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/discovery",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/messages/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/messages",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/requests",
       "destination": "/index.html"
     }
   ]
