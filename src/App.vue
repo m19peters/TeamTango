@@ -95,9 +95,11 @@ onUnmounted(() => {
         <div class="flex items-center justify-between h-20 px-4 py-2">
           <!-- Logo/Brand -->
           <div class="flex items-center">
-            <div class="w-14 h-14 rounded-lg overflow-hidden">
-              <img src="@/assets/team_tango_logo.png" alt="TeamTango Logo" class="w-full h-full object-contain">
-            </div>
+            <router-link to="/teams" class="flex items-center">
+              <div class="w-14 h-14 rounded-lg overflow-hidden">
+                <img src="@/assets/team_tango_logo.png" alt="TeamTango Logo" class="w-full h-full object-contain">
+              </div>
+            </router-link>
           </div>
           
           <!-- Logout Button -->
